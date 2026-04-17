@@ -209,8 +209,25 @@ class TicketService extends GetxService {
     _comments[ticketId] = [...(_comments[ticketId] ?? []), comment];
     final ticket = _tickets.firstWhereOrNull((item) => item.id == ticketId);
     if (ticket != null) {
-      ticket.commentCount = _comments[ticketId]!.length;
-      ticket.updatedAt = DateTime.now();
+      final index = _tickets.indexWhere((t) => t.id == ticketId);
+      if (index != -1) {
+        _tickets[index] = TicketModel(
+          id: ticket.id,
+          title: ticket.title,
+          description: ticket.description,
+          status: ticket.status,
+          priority: ticket.priority,
+          category: ticket.category,
+          createdBy: ticket.createdBy,
+          createdByName: ticket.createdByName,
+          assignedTo: ticket.assignedTo,
+          assignedToName: ticket.assignedToName,
+          attachments: ticket.attachments,
+          createdAt: ticket.createdAt,
+          updatedAt: DateTime.now(),
+          commentCount: _comments[ticketId]!.length,
+        );
+      }
     }
     _savePersistedData();
     return comment;

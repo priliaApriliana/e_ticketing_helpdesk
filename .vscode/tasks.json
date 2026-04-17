@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "temp",
+			"type": "shell",
+			"command": "Write-Output 'noop'",
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}
