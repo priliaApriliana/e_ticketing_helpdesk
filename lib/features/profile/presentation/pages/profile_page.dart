@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
-import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
-import 'package:e_ticketing_helpdesk/core/services/notification_service.dart';
+import 'package:e_ticketing_helpdesk/features/notification/presentation/providers/notification_provider.dart';
+import 'package:e_ticketing_helpdesk/features/auth/presentation/widgets/password_action_dialog.dart';
 
 import '../providers/profile_provider.dart';
 
@@ -40,10 +41,16 @@ class ProfileScreen extends GetView<ProfileProvider> {
                     'Fitur edit profil masih dalam pengembangan',
                     snackPosition: SnackPosition.BOTTOM,
                   ),
-                  onChangePassword: () => Get.snackbar(
-                    'Info',
-                    'Fitur ubah password masih dalam pengembangan',
-                    snackPosition: SnackPosition.BOTTOM,
+                  onChangePassword: () => showPasswordActionDialog(
+                    title: 'Ubah Password',
+                    description:
+                        'Masukkan password lama dan password baru untuk akun yang sedang aktif.',
+                    submitLabel: 'Simpan Password Baru',
+                    email: user?.email,
+                    showEmailField: false,
+                    requireCurrentPassword: true,
+                    onSubmit: (_, currentPassword, newPassword) =>
+                        controller.changePassword(currentPassword, newPassword),
                   ),
                   onNotifications: () => Get.toNamed(Routes.notifications),
                   onLogout: _showLogoutDialog,
@@ -570,22 +577,18 @@ class _MenuPanel extends StatelessWidget {
             onTap: onChangePassword,
           ),
           const SizedBox(height: 10),
-          Obx(() {
-            final authService = Get.find<AuthService>();
-            final notificationService = Get.find<NotificationService>();
-            final userId = authService.currentUser.value?.id;
-            final _ = notificationService.notifications.length;
-            final unread = userId == null
-                ? 0
-                : notificationService.unreadCountByUser(userId);
-            return _MenuTile(
-              icon: Icons.notifications_outlined,
-              title: 'Notifikasi',
-              subtitle: 'Atur preferensi notifikasi',
-              badgeCount: unread,
-              onTap: onNotifications,
-            );
-          }),
+          Builder(
+            builder: (context) {
+              final unread = context.watch<NotificationProvider>().unreadCount;
+              return _MenuTile(
+                icon: Icons.notifications_outlined,
+                title: 'Notifikasi',
+                subtitle: 'Atur preferensi notifikasi',
+                badgeCount: unread,
+                onTap: onNotifications,
+              );
+            },
+          ),
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
@@ -594,27 +597,7 @@ class _MenuPanel extends StatelessWidget {
                 backgroundColor: Colors.red,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () {
-                Get.dialog(
-                  AlertDialog(
-                    title: const Text('Konfirmasi Logout'),
-                    content: const Text('Apakah Anda yakin ingin logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Get.back(),
-                        child: const Text('Batal'),
-                      ),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                        ),
-                        onPressed: onLogout,
-                        child: const Text('Logout'),
-                      ),
-                    ],
-                  ),
-                );
-              },
+              onPressed: onLogout,
               icon: const Icon(Icons.logout_rounded),
               label: const Text('Logout'),
             ),
@@ -699,7 +682,7 @@ class _MenuTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
-                    badgeCount > 99 ? '99+' : '',
+                    badgeCount > 99 ? '99+' : '$badgeCount',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
@@ -778,40 +761,25 @@ Color _panelColor(BuildContext context) {
 }
 
 Color _panelBorderColor(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
   final isDark = Theme.of(context).brightness == Brightness.dark;
   return isDark
-      ? const Color(0xFF334155).withValues(alpha: 0.70)
-      : Colors.white.withValues(alpha: 0.85);
+      ? scheme.outlineVariant.withValues(alpha: 0.72)
+      : scheme.outlineVariant.withValues(alpha: 0.55);
 }
 
 Color _softSurfaceColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF);
+  return Theme.of(context).colorScheme.surfaceContainerHighest;
 }
 
 Color _softBorderColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+  return Theme.of(context).colorScheme.outlineVariant;
 }
 
 Color _titleColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A);
+  return Theme.of(context).colorScheme.onSurface;
 }
 
 Color _mutedColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  return Theme.of(context).colorScheme.onSurfaceVariant;
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -5,33 +5,27 @@ import 'package:intl/intl.dart';
 import 'package:e_ticketing_helpdesk/features/notification/presentation/providers/notification_provider.dart';
 import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
 
-class NotificationPage extends GetView<NotificationProvider> {
-  const NotificationPage({super.key});
+class NotificationPage extends GetView<NotificationProvider> {  const NotificationPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget build(BuildContext context) {    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scheme = Theme.of(context).colorScheme;
     final unreadSurface = isDark
-        ? const Color(0xFF1E293B)
-        : const Color(0xFFEFF4FF);
-    final bodyTextColor = isDark
-        ? const Color(0xFFCBD5E1)
-        : const Color(0xFF475569);
-    final metaTextColor = isDark
-        ? const Color(0xFF94A3B8)
-        : const Color(0xFF64748B);
+        ? scheme.surfaceContainerLow
+        : scheme.surfaceContainerHighest;
+    final bodyTextColor = scheme.onSurface;
+    final metaTextColor = scheme.onSurfaceVariant;
 
     return Scaffold(
       appBar: AppBar(
-        title: Obx(() {
-          final unread = controller.unreadCount.value;
+        title: AnimatedBuilder(animation: controller, builder: (context, _) {
+          final unread = controller.unreadCount;
           final suffix = unread > 0 ? ' ($unread)' : '';
           return Text('Notifikasi$suffix');
         }),
         actions: [
-          Obx(
-            () => TextButton(
-              onPressed: controller.unreadCount.value == 0
+          AnimatedBuilder(animation: controller, builder: (context, _) => TextButton(
+              onPressed: controller.unreadCount == 0
                   ? null
                   : controller.markAllAsRead,
               child: const Text('Tandai semua'),
@@ -39,18 +33,15 @@ class NotificationPage extends GetView<NotificationProvider> {
           ),
         ],
       ),
-      body: Obx(() {
-        final items = controller.notifications;
-        if (items.isEmpty) {
-          return const Center(child: Text('Belum ada notifikasi'));
+      body: AnimatedBuilder(animation: controller, builder: (context, _) {        final items = controller.notifications;
+        if (items.isEmpty) {          return const Center(child: Text('Belum ada notifikasi'));
         }
 
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: items.length,
           separatorBuilder: (context, index) => const SizedBox(height: 10),
-          itemBuilder: (context, index) {
-            final item = items[index];
+          itemBuilder: (context, index) {            final item = items[index];
             return Material(
               color: item.isRead
                   ? Theme.of(context).colorScheme.surfaceContainerHighest
@@ -58,11 +49,9 @@ class NotificationPage extends GetView<NotificationProvider> {
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 borderRadius: BorderRadius.circular(14),
-                onTap: () {
-                  controller.markAsRead(item.id);
+                onTap: () {                  controller.markAsRead(item.id);
                   final ticketId = item.ticketId;
-                  if (ticketId != null && ticketId.isNotEmpty) {
-                    Get.toNamed(Routes.ticketDetail, arguments: ticketId);
+                  if (ticketId != null && ticketId.isNotEmpty) {                    Get.toNamed(Routes.ticketDetail, arguments: ticketId);
                     return;
                   }
 
@@ -127,4 +116,12 @@ class NotificationPage extends GetView<NotificationProvider> {
     );
   }
 }
+
+
+
+
+
+
+
+
 

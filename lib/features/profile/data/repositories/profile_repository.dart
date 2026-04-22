@@ -8,6 +8,13 @@ class ProfileRepository {
 
   UserModel? get currentUser => _authService.currentUser.value;
 
+  Future<Map<String, dynamic>> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) {
+    return _authService.changePassword(currentPassword, newPassword);
+  }
+
   Future<void> logout() {
     return _authService.logout();
   }

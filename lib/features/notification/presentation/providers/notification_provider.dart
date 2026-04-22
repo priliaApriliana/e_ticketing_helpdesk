@@ -1,22 +1,21 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
 import 'package:e_ticketing_helpdesk/core/services/notification_service.dart';
 import 'package:e_ticketing_helpdesk/features/notification/data/models/notification_model.dart';
 
-class NotificationProvider extends GetxController {
+class NotificationProvider extends ChangeNotifier {
   final _authService = Get.find<AuthService>();
   final _notificationService = Get.find<NotificationService>();
 
-  final RxList<NotificationModel> notifications = <NotificationModel>[].obs;
-  final unreadCount = 0.obs;
+  List<NotificationModel> notifications = <NotificationModel>[];
+  int unreadCount = 0;
 
   Worker? _authWorker;
   Worker? _notificationWorker;
 
-  @override
   void onInit() {
-    super.onInit();
     _authWorker = ever(_authService.currentUser, (_) => _refresh());
     _notificationWorker = ever<List<NotificationModel>>(
       _notificationService.notifications,
@@ -28,13 +27,15 @@ class NotificationProvider extends GetxController {
   void _refresh() {
     final userId = _authService.currentUser.value?.id;
     if (userId == null) {
-      notifications.clear();
-      unreadCount.value = 0;
+      notifications = <NotificationModel>[];
+      unreadCount = 0;
+      notifyListeners();
       return;
     }
 
-    notifications.value = _notificationService.getByUser(userId);
-    unreadCount.value = _notificationService.unreadCountByUser(userId);
+    notifications = _notificationService.getByUser(userId);
+    unreadCount = _notificationService.unreadCountByUser(userId);
+    notifyListeners();
   }
 
   void markAsRead(String notificationId) {
@@ -52,10 +53,8 @@ class NotificationProvider extends GetxController {
     _notificationService.markAllAsRead(userId);
   }
 
-  @override
   void onClose() {
     _authWorker?.dispose();
     _notificationWorker?.dispose();
-    super.onClose();
   }
 }

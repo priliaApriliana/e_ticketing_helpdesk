@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../widgets/auth_widget.dart';
@@ -9,7 +10,7 @@ class RegisterScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<AuthProvider>();
+    final ctrl = context.read<AuthProvider>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -130,20 +131,19 @@ class RegisterScreen extends StatelessWidget {
                                         style: TextStyle(color: mutedColor),
                                       ),
                                       const SizedBox(height: 14),
-                                      Obx(
-                                        () => TextFormField(
+                                      AnimatedBuilder(animation: ctrl, builder: (context, _) => TextFormField(
                                           controller: ctrl.passwordCtrl,
-                                          obscureText: ctrl.obscurePassword.value,
+                                          obscureText: ctrl.obscurePassword,
                                           decoration: InputDecoration(
                                             labelText: 'Password',
                                             prefixIcon: const Icon(Icons.lock_outlined),
                                             suffixIcon: IconButton(
                                               icon: Icon(
-                                                ctrl.obscurePassword.value
+                                                ctrl.obscurePassword
                                                     ? Icons.visibility_off_outlined
                                                     : Icons.visibility_outlined,
                                               ),
-                                              onPressed: () => ctrl.obscurePassword.toggle(),
+                                              onPressed: () => ctrl.toggleObscurePassword(),
                                             ),
                                           ),
                                           validator: (v) {
@@ -154,32 +154,30 @@ class RegisterScreen extends StatelessWidget {
                                         ),
                                       ),
                                       const SizedBox(height: 14),
-                                      Obx(
-                                        () => TextFormField(
+                                      AnimatedBuilder(animation: ctrl, builder: (context, _) => TextFormField(
                                           controller: ctrl.confirmPasswordCtrl,
-                                          obscureText: ctrl.obscureConfirmPassword.value,
+                                          obscureText: ctrl.obscureConfirmPassword,
                                           decoration: InputDecoration(
                                             labelText: 'Konfirmasi Password',
                                             prefixIcon: const Icon(Icons.lock_outlined),
                                             suffixIcon: IconButton(
                                               icon: Icon(
-                                                ctrl.obscureConfirmPassword.value
+                                                ctrl.obscureConfirmPassword
                                                     ? Icons.visibility_off_outlined
                                                     : Icons.visibility_outlined,
                                               ),
-                                              onPressed: () => ctrl.obscureConfirmPassword.toggle(),
+                                              onPressed: () => ctrl.toggleObscureConfirmPassword(),
                                             ),
                                           ),
                                           validator: (v) => v == null || v.isEmpty ? 'Konfirmasi password wajib diisi' : null,
                                         ),
                                       ),
                                       const SizedBox(height: 18),
-                                      Obx(
-                                        () => SizedBox(
+                                      AnimatedBuilder(animation: ctrl, builder: (context, _) => SizedBox(
                                           width: double.infinity,
                                           child: ElevatedButton(
-                                            onPressed: ctrl.isLoading.value ? null : ctrl.register,
-                                            child: ctrl.isLoading.value
+                                            onPressed: ctrl.isLoading ? null : ctrl.register,
+                                            child: ctrl.isLoading
                                                 ? const SizedBox(
                                                     height: 20,
                                                     width: 20,
@@ -287,6 +285,9 @@ class _BulletLine extends StatelessWidget {
     );
   }
 }
+
+
+
 
 
 

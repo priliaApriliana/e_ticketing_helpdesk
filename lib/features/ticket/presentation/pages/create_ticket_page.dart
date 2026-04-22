@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:e_ticketing_helpdesk/core/theme/app_theme.dart';
@@ -12,7 +12,7 @@ class CreateTicketScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<TicketProvider>();
+    final ctrl = context.read<TicketProvider>();
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
@@ -262,8 +262,7 @@ class _FormPanel extends StatelessWidget {
               subtitle: 'Pilih kategori yang paling relevan',
             ),
             const SizedBox(height: 8),
-            Obx(
-              () => DropdownButtonFormField<String>(
+            AnimatedBuilder(animation: controller, builder: (context, _) => DropdownButtonFormField<String>(
                 initialValue: controller.selectedCategory.value,
                 decoration: const InputDecoration(),
                 items: controller.categories
@@ -275,15 +274,14 @@ class _FormPanel extends StatelessWidget {
                     )
                     .toList(),
                 onChanged: (value) {
-                  if (value != null) controller.selectedCategory.value = value;
+                  if (value != null) controller.setCategory(value);
                 },
               ),
             ),
             const SizedBox(height: 16),
             _SectionTitle(title: 'Prioritas', subtitle: 'Atur urgensi masalah'),
             const SizedBox(height: 8),
-            Obx(
-              () => Row(
+            AnimatedBuilder(animation: controller, builder: (context, _) => Row(
                 children: controller.priorities.map((priority) {
                   final selected =
                       controller.selectedPriority.value == priority;
@@ -293,8 +291,7 @@ class _FormPanel extends StatelessWidget {
                         right: priority == controller.priorities.last ? 0 : 8,
                       ),
                       child: GestureDetector(
-                        onTap: () =>
-                            controller.selectedPriority.value = priority,
+                        onTap: () => controller.setPriority(priority),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
@@ -390,7 +387,7 @@ class _FormPanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Obx(() {
+            AnimatedBuilder(animation: controller, builder: (context, _) {
               if (controller.selectedImages.isEmpty) {
                 return Container(
                   height: 110,
@@ -454,8 +451,7 @@ class _FormPanel extends StatelessWidget {
               );
             }),
             const SizedBox(height: 18),
-            Obx(
-              () => SizedBox(
+            AnimatedBuilder(animation: controller, builder: (context, _) => SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: controller.isSubmitting.value
@@ -577,31 +573,34 @@ Color _panelColor(BuildContext context) {
 }
 
 Color _panelBorderColor(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
   final isDark = Theme.of(context).brightness == Brightness.dark;
   return isDark
-      ? const Color(0xFF334155).withValues(alpha: 0.70)
-      : Colors.white.withValues(alpha: 0.85);
+      ? scheme.outlineVariant.withValues(alpha: 0.72)
+      : scheme.outlineVariant.withValues(alpha: 0.55);
 }
 
 Color _softSurfaceColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF);
+  return Theme.of(context).colorScheme.surfaceContainerHighest;
 }
 
 Color _softBorderColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+  return Theme.of(context).colorScheme.outlineVariant;
 }
 
 Color _titleColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A);
+  return Theme.of(context).colorScheme.onSurface;
 }
 
 Color _mutedColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  return Theme.of(context).colorScheme.onSurfaceVariant;
 }
+
+
+
+
+
+
 
 
 

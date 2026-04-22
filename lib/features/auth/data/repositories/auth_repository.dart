@@ -20,6 +20,13 @@ class AuthRepository {
     return _authService.register(name, email, password);
   }
 
+  Future<Map<String, dynamic>> resetPassword(
+    String email,
+    String newPassword,
+  ) {
+    return _authService.resetPassword(email, newPassword);
+  }
+
   Future<void> logout() {
     return _authService.logout();
   }

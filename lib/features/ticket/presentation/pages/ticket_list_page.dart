@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_model.dart';
@@ -13,62 +14,54 @@ class TicketListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<TicketProvider>();
-    final authService = Get.find<AuthService>();
+    final ctrl = context.watch<TicketProvider>();
+    final authService = context.read<AuthService>();
+    final user = authService.currentUser.value;
+    final tickets = ctrl.tickets;
+    final total = tickets.length;
+    final open = tickets.where((ticket) => ticket.status == 'open').length;
+    final inProgress = tickets
+        .where((ticket) => ticket.status == 'in_progress')
+        .length;
+    final resolved = tickets.where((ticket) => ticket.status == 'resolved').length;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: [
           const _Backdrop(),
           SafeArea(
-            child: Obx(() {
-              final user = authService.currentUser.value;
-              final tickets = ctrl.tickets;
-              final total = tickets.length;
-              final open = tickets
-                  .where((ticket) => ticket.status == 'open')
-                  .length;
-              final inProgress = tickets
-                  .where((ticket) => ticket.status == 'in_progress')
-                  .length;
-              final resolved = tickets
-                  .where((ticket) => ticket.status == 'resolved')
-                  .length;
-
-              return RefreshIndicator(
-                onRefresh: ctrl.loadTickets,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-                  children: [
-                    _TopBar(onRefresh: ctrl.loadTickets),
-                    const SizedBox(height: 18),
-                    _HeroPanel(
-                      userName: user?.name ?? 'Pengguna',
-                      totalTickets: total,
-                      openTickets: open,
-                      inProgressTickets: inProgress,
-                      resolvedTickets: resolved,
-                    ),
-                    const SizedBox(height: 16),
-                    _FilterPanel(controller: ctrl),
-                    const SizedBox(height: 16),
-                    _TicketFeed(controller: ctrl),
-                  ],
-                ),
-              );
-            }),
+            child: RefreshIndicator(
+              onRefresh: ctrl.loadTickets,
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+                children: [
+                  _TopBar(onRefresh: ctrl.loadTickets),
+                  const SizedBox(height: 18),
+                  _HeroPanel(
+                    userName: user?.name ?? 'Pengguna',
+                    totalTickets: total,
+                    openTickets: open,
+                    inProgressTickets: inProgress,
+                    resolvedTickets: resolved,
+                  ),
+                  const SizedBox(height: 16),
+                  _FilterPanel(controller: ctrl),
+                  const SizedBox(height: 16),
+                  _TicketFeed(controller: ctrl),
+                ],
+              ),
+            ),
           ),
         ],
       ),
-      floatingActionButton: Obx(() {
-        final user = authService.currentUser.value;
-        if (user?.isUser != true) return const SizedBox.shrink();
-        return FloatingActionButton.extended(
-          onPressed: () => Get.toNamed(Routes.ticketCreate),
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Buat Tiket'),
-        );
-      }),
+      floatingActionButton: (user?.isUser == true)
+          ? FloatingActionButton.extended(
+              onPressed: () => Get.toNamed(Routes.ticketCreate),
+              icon: Icon(Icons.add_rounded),
+              label: const Text('Buat Tiket'),
+            )
+          : null,
       bottomNavigationBar: _BottomNav(selectedIndex: 1),
     );
   }
@@ -152,7 +145,7 @@ class _TopBar extends StatelessWidget {
           width: 46,
           height: 46,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.92),
+            color: _softSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -164,9 +157,9 @@ class _TopBar extends StatelessWidget {
           ),
           child: IconButton(
             padding: EdgeInsets.zero,
-            icon: const Icon(
+            icon: Icon(
               Icons.list_alt_rounded,
-              color: Color(0xFF4338CA),
+              color: _titleColor(context),
               size: 22,
             ),
             onPressed: () {},
@@ -505,8 +498,9 @@ class _FilterPanel extends StatelessWidget {
           const SizedBox(height: 14),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: Obx(
-              () => Row(
+            child: AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) => Row(
                 children: [
                   for (final filter in filters)
                     Padding(
@@ -578,23 +572,26 @@ class _TicketFeed extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Obx(() {
-            if (controller.isLoading.value) {
-              return const _LoadingTickets();
-            }
-            if (controller.tickets.isEmpty) {
-              return const _EmptyState();
-            }
-            return Column(
-              children: [
-                for (var i = 0; i < controller.tickets.length; i++) ...[
-                  _TicketCard(ticket: controller.tickets[i]),
-                  if (i != controller.tickets.length - 1)
-                    const SizedBox(height: 12),
+          AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) {
+              if (controller.isLoading.value) {
+                return const _LoadingTickets();
+              }
+              if (controller.tickets.isEmpty) {
+                return const _EmptyState();
+              }
+              return Column(
+                children: [
+                  for (var i = 0; i < controller.tickets.length; i++) ...[
+                    _TicketCard(ticket: controller.tickets[i]),
+                    if (i != controller.tickets.length - 1)
+                      const SizedBox(height: 12),
+                  ],
                 ],
-              ],
-            );
-          }),
+              );
+            },
+          )
         ],
       ),
     );
@@ -930,31 +927,33 @@ Color _panelColor(BuildContext context) {
 }
 
 Color _panelBorderColor(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
   final isDark = Theme.of(context).brightness == Brightness.dark;
   return isDark
-      ? const Color(0xFF334155).withValues(alpha: 0.70)
-      : Colors.white.withValues(alpha: 0.85);
+      ? scheme.outlineVariant.withValues(alpha: 0.72)
+      : scheme.outlineVariant.withValues(alpha: 0.55);
 }
 
 Color _softSurfaceColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF);
+  return Theme.of(context).colorScheme.surfaceContainerHighest;
 }
 
 Color _softBorderColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+  return Theme.of(context).colorScheme.outlineVariant;
 }
 
 Color _titleColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A);
+  return Theme.of(context).colorScheme.onSurface;
 }
 
 Color _mutedColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  return Theme.of(context).colorScheme.onSurfaceVariant;
 }
+
+
+
+
+
 
 
 

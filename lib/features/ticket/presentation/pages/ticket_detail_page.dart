@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import 'package:e_ticketing_helpdesk/features/profile/data/models/user_model.dart';
@@ -12,8 +13,8 @@ class TicketDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<TicketProvider>();
-    final authService = Get.find<AuthService>();
+    final ctrl = context.read<TicketProvider>();
+    final authService = context.read<AuthService>();
     final ticketId = Get.arguments as String;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -26,76 +27,78 @@ class TicketDetailScreen extends StatelessWidget {
         children: [
           const _Backdrop(),
           SafeArea(
-            child: Obx(() {
-              if (ctrl.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
+            child: AnimatedBuilder(
+              animation: ctrl,
+              builder: (context, _) {
+                if (ctrl.isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              final ticket = ctrl.selectedTicket.value;
-              if (ticket == null) {
-                return const Center(child: Text('Tiket tidak ditemukan'));
-              }
+                final ticket = ctrl.selectedTicket.value;
+                if (ticket == null) {
+                  return const Center(child: Text('Tiket tidak ditemukan'));
+                }
 
-              final statusColor = AppTheme.statusColor(ticket.status);
-              final priorityColor = AppTheme.priorityColor(ticket.priority);
-              final isStaff = authService.currentUser.value?.isStaff == true;
+                final statusColor = AppTheme.statusColor(ticket.status);
+                final priorityColor = AppTheme.priorityColor(ticket.priority);
+                final isStaff = authService.currentUser.value?.isStaff == true;
 
-              return Column(
-                children: [
-                  Expanded(
-                    child: RefreshIndicator(
-                      onRefresh: () => ctrl.loadTicketDetail(ticketId),
-                      child: ListView(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-                        children: [
-                          _TopBar(
-                            onMenu: () {
-                              if (!isStaff) return;
-                              _showActionMenu(
-                                context,
-                                ctrl,
-                                ticketId,
-                                authService,
-                              );
-                            },
-                            isHelpdesk: isStaff,
-                          ),
-                          const SizedBox(height: 18),
-                          _HeroTicketCard(
-                            ticket: ticket,
-                            statusColor: statusColor,
-                          ),
-                          const SizedBox(height: 16),
-                          _InfoPanel(
-                            ticket: ticket,
-                            priorityColor: priorityColor,
-                            statusColor: statusColor,
-                          ),
-                          const SizedBox(height: 16),
-                          _DescriptionPanel(description: ticket.description),
-                          const SizedBox(height: 16),
-                          _TimelinePanel(status: ticket.status),
-                          const SizedBox(height: 16),
-                          _CommentsPanel(
-                            controller: ctrl,
-                            authService: authService,
-                          ),
-                          const SizedBox(height: 80),
-                        ],
+                return Column(
+                  children: [
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () => ctrl.loadTicketDetail(ticketId),
+                        child: ListView(
+                          padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+                          children: [
+                            _TopBar(
+                              onMenu: () {
+                                if (!isStaff) return;
+                                _showActionMenu(
+                                  context,
+                                  ctrl,
+                                  ticketId,
+                                  authService,
+                                );
+                              },
+                              isHelpdesk: isStaff,
+                            ),
+                            const SizedBox(height: 18),
+                            _HeroTicketCard(
+                              ticket: ticket,
+                              statusColor: statusColor,
+                            ),
+                            const SizedBox(height: 16),
+                            _InfoPanel(
+                              ticket: ticket,
+                              priorityColor: priorityColor,
+                              statusColor: statusColor,
+                            ),
+                            const SizedBox(height: 16),
+                            _DescriptionPanel(description: ticket.description),
+                            const SizedBox(height: 16),
+                            _TimelinePanel(status: ticket.status),
+                            const SizedBox(height: 16),
+                            _CommentsPanel(
+                              controller: ctrl,
+                              authService: authService,
+                            ),
+                            const SizedBox(height: 80),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  _ComposerBar(ticketId: ticketId, controller: ctrl),
-                ],
-              );
-            }),
+                    _ComposerBar(ticketId: ticketId, controller: ctrl),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),
     );
   }
 }
-
 class _Backdrop extends StatelessWidget {
   const _Backdrop();
 
@@ -737,39 +740,41 @@ class _CommentsPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Obx(() {
-            if (controller.isLoadingComments.value) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(child: CircularProgressIndicator()),
-              );
-            }
+          AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) {
+              if (controller.isLoadingComments.value) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
 
-            if (controller.comments.isEmpty) {
-              return const _EmptyCommentState();
-            }
+              if (controller.comments.isEmpty) {
+                return const _EmptyCommentState();
+              }
 
-            return Column(
-              children: [
-                for (final comment in controller.comments) ...[
-                  _CommentBubble(
-                    comment: comment,
-                    isCurrentUser:
-                        comment.userId == authService.currentUser.value?.id,
-                    isHelpdesk: authService.currentUser.value?.isStaff == true,
-                    onReply: () => controller.prepareReply(comment.userName),
-                  ),
-                  const SizedBox(height: 10),
+              return Column(
+                children: [
+                  for (final comment in controller.comments) ...[
+                    _CommentBubble(
+                      comment: comment,
+                      isCurrentUser:
+                          comment.userId == authService.currentUser.value?.id,
+                      isHelpdesk: authService.currentUser.value?.isStaff == true,
+                      onReply: () => controller.prepareReply(comment.userName),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                 ],
-              ],
-            );
-          }),
+              );
+            },
+          ),
         ],
       ),
     );
   }
 }
-
 class _EmptyCommentState extends StatelessWidget {
   const _EmptyCommentState();
 
@@ -982,8 +987,9 @@ class _ComposerBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Obx(
-            () => IconButton.filled(
+          AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) => IconButton.filled(
               onPressed: controller.isSubmitting.value
                   ? null
                   : () => controller.addComment(ticketId),
@@ -1004,7 +1010,6 @@ class _ComposerBar extends StatelessWidget {
     );
   }
 }
-
 Future<void> _showActionMenu(
   BuildContext context,
   TicketProvider ctrl,
@@ -1217,31 +1222,33 @@ Color _panelColor(BuildContext context) {
 }
 
 Color _panelBorderColor(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
   final isDark = Theme.of(context).brightness == Brightness.dark;
   return isDark
-      ? const Color(0xFF334155).withValues(alpha: 0.70)
-      : Colors.white.withValues(alpha: 0.85);
+      ? scheme.outlineVariant.withValues(alpha: 0.72)
+      : scheme.outlineVariant.withValues(alpha: 0.55);
 }
 
 Color _softSurfaceColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF);
+  return Theme.of(context).colorScheme.surfaceContainerHighest;
 }
 
 Color _softBorderColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+  return Theme.of(context).colorScheme.outlineVariant;
 }
 
 Color _titleColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A);
+  return Theme.of(context).colorScheme.onSurface;
 }
 
 Color _mutedColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  return Theme.of(context).colorScheme.onSurfaceVariant;
 }
+
+
+
+
+
 
 
 

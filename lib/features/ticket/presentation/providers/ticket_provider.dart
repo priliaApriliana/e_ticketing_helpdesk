@@ -7,7 +7,7 @@ import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
 import 'package:e_ticketing_helpdesk/core/services/notification_service.dart';
 import 'package:e_ticketing_helpdesk/features/ticket/data/repositories/ticket_repository.dart';
 
-class TicketProvider extends GetxController {
+class TicketProvider extends ChangeNotifier {
   final TicketRepository _ticketRepository = TicketRepository();
   final _authService = Get.find<AuthService>();
   final _notificationService = Get.find<NotificationService>();
@@ -33,46 +33,59 @@ class TicketProvider extends GetxController {
   final categories = ['Hardware', 'Software', 'Network', 'Akun', 'Lainnya'];
   final priorities = ['low', 'medium', 'high'];
 
-  @override
+  void setCategory(String category) {
+    selectedCategory.value = category;
+    notifyListeners();
+  }
+
+  void setPriority(String priority) {
+    selectedPriority.value = priority;
+    notifyListeners();
+  }
+
   void onInit() {
-    super.onInit();
     loadTickets();
   }
 
   Future<void> loadTickets() async {
     isLoading.value = true;
+    notifyListeners();
     try {
       final user = _authService.currentUser.value;
       final userId = user?.isUser == true ? user?.id : null;
-      final status = selectedFilter.value == 'all'
-          ? null
-          : selectedFilter.value;
+      final status = selectedFilter.value == 'all' ? null : selectedFilter.value;
       tickets.value = await _ticketRepository.getTickets(
         userId: userId,
         status: status,
       );
     } finally {
       isLoading.value = false;
+      notifyListeners();
     }
   }
 
   Future<void> loadTicketDetail(String id) async {
     isLoading.value = true;
+    notifyListeners();
     isLoadingComments.value = true;
+    notifyListeners();
     try {
       selectedTicket.value = await _ticketRepository.getTicketById(id);
     } finally {
       isLoading.value = false;
+      notifyListeners();
     }
     try {
       comments.value = await _ticketRepository.getComments(id);
     } finally {
       isLoadingComments.value = false;
+      notifyListeners();
     }
   }
 
   void setFilter(String filter) {
     selectedFilter.value = filter;
+    notifyListeners();
     loadTickets();
   }
 
@@ -81,13 +94,20 @@ class TicketProvider extends GetxController {
     if (source == ImageSource.gallery) {
       final images = await picker.pickMultiImage();
       selectedImages.addAll(images);
+      notifyListeners();
     } else {
       final image = await picker.pickImage(source: source);
-      if (image != null) selectedImages.add(image);
+      if (image != null) {
+        selectedImages.add(image);
+        notifyListeners();
+      }
     }
   }
 
-  void removeImage(int index) => selectedImages.removeAt(index);
+  void removeImage(int index) {
+    selectedImages.removeAt(index);
+    notifyListeners();
+  }
 
   Future<void> createTicket() async {
     if (!createFormKey.currentState!.validate()) return;
@@ -95,6 +115,7 @@ class TicketProvider extends GetxController {
     if (user == null) return;
 
     isSubmitting.value = true;
+    notifyListeners();
     try {
       final ticket = await _ticketRepository.createTicket(
         title: titleCtrl.text.trim(),
@@ -112,13 +133,14 @@ class TicketProvider extends GetxController {
       Get.snackbar(
         'Berhasil',
         'Tiket berhasil dibuat',
-        backgroundColor: Colors.green[100],
-        colorText: Colors.green[900],
+        backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
         snackPosition: SnackPosition.BOTTOM,
       );
       _clearForm();
     } finally {
       isSubmitting.value = false;
+      notifyListeners();
     }
   }
 
@@ -142,6 +164,7 @@ class TicketProvider extends GetxController {
     final ticket = await _ticketRepository.getTicketById(ticketId);
 
     isSubmitting.value = true;
+    notifyListeners();
     try {
       final comment = await _ticketRepository.addComment(
         ticketId: ticketId,
@@ -151,6 +174,7 @@ class TicketProvider extends GetxController {
         content: commentCtrl.text.trim(),
       );
       comments.add(comment);
+      notifyListeners();
 
       if (ticket != null) {
         _notifyCommentAdded(ticket, user);
@@ -160,14 +184,11 @@ class TicketProvider extends GetxController {
       loadTickets();
     } finally {
       isSubmitting.value = false;
+      notifyListeners();
     }
   }
 
-  Future<void> assignTicket(
-    String ticketId,
-    String assignedTo,
-    String assignedToName,
-  ) async {
+  Future<void> assignTicket(String ticketId, String assignedTo, String assignedToName) async {
     final actor = _authService.currentUser.value;
     if (actor == null) return;
 
@@ -195,9 +216,7 @@ class TicketProvider extends GetxController {
       return;
     }
 
-    if (!isAdmin &&
-        ticket.assignedTo != null &&
-        ticket.assignedTo != assignedTo) {
+    if (!isAdmin && ticket.assignedTo != null && ticket.assignedTo != assignedTo) {
       Get.snackbar(
         'Akses Ditolak',
         'Re-assign tiket hanya bisa dilakukan oleh admin.',
@@ -207,6 +226,7 @@ class TicketProvider extends GetxController {
     }
 
     isSubmitting.value = true;
+    notifyListeners();
     try {
       final previousAssigneeId = ticket.assignedTo;
       final success = await _ticketRepository.assignTicket(
@@ -229,12 +249,13 @@ class TicketProvider extends GetxController {
       Get.snackbar(
         'Berhasil',
         'Tiket sedang ditangani technical support: $assignedToName',
-        backgroundColor: Colors.green[100],
-        colorText: Colors.green[900],
+        backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
       isSubmitting.value = false;
+      notifyListeners();
     }
   }
 
@@ -252,6 +273,7 @@ class TicketProvider extends GetxController {
     final ticketBefore = await _ticketRepository.getTicketById(ticketId);
 
     isSubmitting.value = true;
+    notifyListeners();
     try {
       final success = await _ticketRepository.unassignTicket(ticketId);
       if (!success) return;
@@ -265,12 +287,13 @@ class TicketProvider extends GetxController {
       Get.snackbar(
         'Berhasil',
         'Assign dibatalkan. Tiket kembali ke status menunggu helpdesk.',
-        backgroundColor: Colors.green[100],
-        colorText: Colors.green[900],
+        backgroundColor: Get.theme.colorScheme.primaryContainer,
+        colorText: Get.theme.colorScheme.onPrimaryContainer,
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
       isSubmitting.value = false;
+      notifyListeners();
     }
   }
 
@@ -424,12 +447,7 @@ class TicketProvider extends GetxController {
     );
   }
 
-  void _notifyStatusUpdated(
-    TicketModel ticket,
-    String status,
-    String actorName,
-    String actorId,
-  ) {
+  void _notifyStatusUpdated(TicketModel ticket, String status, String actorName, String actorId) {
     final recipients = <String>{
       ticket.createdBy,
       if (ticket.assignedTo != null) ticket.assignedTo!,
@@ -469,13 +487,19 @@ class TicketProvider extends GetxController {
     selectedPriority.value = 'medium';
     selectedCategory.value = 'Hardware';
     selectedImages.clear();
+    notifyListeners();
   }
 
-  @override
   void onClose() {
     titleCtrl.dispose();
     descriptionCtrl.dispose();
     commentCtrl.dispose();
-    super.onClose();
   }
 }
+
+
+
+
+
+
+

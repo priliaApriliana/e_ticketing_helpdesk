@@ -4,11 +4,7 @@ class AuthGlowOrb extends StatelessWidget {
   final Color color;
   final double size;
 
-  const AuthGlowOrb({
-    super.key,
-    required this.color,
-    required this.size,
-  });
+  const AuthGlowOrb({super.key, required this.color, required this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -40,15 +36,15 @@ class AuthHeroSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.16),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.20)),
           ),
-          child: Icon(icon, size: 56, color: Colors.white),
+          child: Icon(icon, size: 42, color: Colors.white),
         ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 18),
         Text(
           title,
           textAlign: TextAlign.center,
@@ -65,7 +61,7 @@ class AuthHeroSection extends StatelessWidget {
             color: Colors.white.withValues(alpha: 0.84),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         Wrap(
           alignment: WrapAlignment.center,
           spacing: 8,
@@ -85,7 +81,7 @@ class AuthChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(999),

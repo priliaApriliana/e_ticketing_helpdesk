@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:e_ticketing_helpdesk/features/auth/data/repositories/auth_repository.dart';
 import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
 
-class AuthProvider extends GetxController {
+class AuthProvider extends ChangeNotifier {
   final AuthRepository _authRepository = AuthRepository();
 
   final emailCtrl = TextEditingController();
@@ -11,16 +11,27 @@ class AuthProvider extends GetxController {
   final nameCtrl = TextEditingController();
   final confirmPasswordCtrl = TextEditingController();
 
-  final isLoading = false.obs;
-  final obscurePassword = true.obs;
-  final obscureConfirmPassword = true.obs;
+  bool isLoading = false;
+  bool obscurePassword = true;
+  bool obscureConfirmPassword = true;
 
   final loginFormKey = GlobalKey<FormState>();
   final registerFormKey = GlobalKey<FormState>();
 
+  void toggleObscurePassword() {
+    obscurePassword = !obscurePassword;
+    notifyListeners();
+  }
+
+  void toggleObscureConfirmPassword() {
+    obscureConfirmPassword = !obscureConfirmPassword;
+    notifyListeners();
+  }
+
   Future<void> login() async {
     if (!loginFormKey.currentState!.validate()) return;
-    isLoading.value = true;
+    isLoading = true;
+    notifyListeners();
     try {
       final result = await _authRepository.login(
         emailCtrl.text.trim(),
@@ -32,13 +43,14 @@ class AuthProvider extends GetxController {
         Get.snackbar(
           'Login Gagal',
           result['message'],
-          backgroundColor: Colors.red[100],
-          colorText: Colors.red[900],
+          backgroundColor: Get.theme.colorScheme.errorContainer,
+          colorText: Get.theme.colorScheme.onErrorContainer,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
     } finally {
-      isLoading.value = false;
+      isLoading = false;
+      notifyListeners();
     }
   }
 
@@ -48,13 +60,14 @@ class AuthProvider extends GetxController {
       Get.snackbar(
         'Error',
         'Password tidak cocok',
-        backgroundColor: Colors.red[100],
-        colorText: Colors.red[900],
+        backgroundColor: Get.theme.colorScheme.errorContainer,
+        colorText: Get.theme.colorScheme.onErrorContainer,
         snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
-    isLoading.value = true;
+    isLoading = true;
+    notifyListeners();
     try {
       final result = await _authRepository.register(
         nameCtrl.text.trim(),
@@ -65,8 +78,8 @@ class AuthProvider extends GetxController {
         Get.snackbar(
           'Berhasil',
           result['message'],
-          backgroundColor: Colors.green[100],
-          colorText: Colors.green[900],
+          backgroundColor: Get.theme.colorScheme.primaryContainer,
+          colorText: Get.theme.colorScheme.onPrimaryContainer,
           snackPosition: SnackPosition.BOTTOM,
         );
         Get.offNamed(Routes.login);
@@ -74,25 +87,28 @@ class AuthProvider extends GetxController {
         Get.snackbar(
           'Gagal',
           result['message'],
-          backgroundColor: Colors.red[100],
-          colorText: Colors.red[900],
+          backgroundColor: Get.theme.colorScheme.errorContainer,
+          colorText: Get.theme.colorScheme.onErrorContainer,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
     } finally {
-      isLoading.value = false;
+      isLoading = false;
+      notifyListeners();
     }
   }
 
-  @override
+  Future<Map<String, dynamic>> resetPassword(
+    String email,
+    String newPassword,
+  ) {
+    return _authRepository.resetPassword(email, newPassword);
+  }
+
   void onClose() {
     emailCtrl.dispose();
     passwordCtrl.dispose();
     nameCtrl.dispose();
     confirmPasswordCtrl.dispose();
-    super.onClose();
   }
 }
-
-
-

@@ -2,13 +2,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_model.dart';
 import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
-import 'package:e_ticketing_helpdesk/core/services/notification_service.dart';
 import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
 import 'package:e_ticketing_helpdesk/core/theme/app_theme.dart';
 import 'package:e_ticketing_helpdesk/features/ticket/presentation/providers/ticket_provider.dart';
+import 'package:e_ticketing_helpdesk/features/notification/presentation/providers/notification_provider.dart';
 import '../providers/dashboard_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -16,94 +17,88 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dashCtrl = Get.find<DashboardProvider>();
-    final authService = Get.find<AuthService>();
+    final dashCtrl = context.watch<DashboardProvider>();
+    final authService = context.read<AuthService>();
+    final user = authService.currentUser.value;
+    final userName = user?.name ?? 'Pengguna';
+    final role = _formatRole(user?.role ?? '');
+    final stats = dashCtrl.stats;
+    final total = stats['total'] ?? 0;
+    final open = stats['open'] ?? 0;
+    final inProgress = stats['in_progress'] ?? 0;
+    final resolved = stats['resolved'] ?? 0;
+    final closed = stats['closed'] ?? 0;
+    final roleMetrics = dashCtrl.roleMetrics;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: [
           const _DashboardBackdrop(),
           SafeArea(
-            child: Obx(() {
-              final user = authService.currentUser.value;
-              final userName = user?.name ?? 'Pengguna';
-              final role = _formatRole(user?.role ?? '');
-              final stats = dashCtrl.stats;
-              final total = stats['total'] ?? 0;
-              final open = stats['open'] ?? 0;
-              final inProgress = stats['in_progress'] ?? 0;
-              final resolved = stats['resolved'] ?? 0;
-              final closed = stats['closed'] ?? 0;
-              final roleMetrics = dashCtrl.roleMetrics;
-
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-                children: [
-                  _TopBar(userName: userName, role: role),
-                  const SizedBox(height: 18),
-                  _HeroPanel(
-                    greeting: dashCtrl.greeting,
-                    userName: userName,
-                    role: role,
-                    totalTickets: total,
-                    openTickets: open,
-                  ),
-                  const SizedBox(height: 16),
-                  _RoleMetricsPanel(
-                    isUser: user?.isUser == true,
-                    metrics: roleMetrics,
-                  ),
-                  const SizedBox(height: 16),
-                  _SnapshotPanel(
-                    total: total,
-                    open: open,
-                    inProgress: inProgress,
-                    resolved: resolved,
-                    closed: closed,
-                  ),
-                  const SizedBox(height: 16),
-                  _QuickActionsPanel(
-                    canCreateTicket: user?.isUser == true,
-                    onTickets: () => Get.toNamed(Routes.ticketList),
-                    onCreateTicket: user?.isUser == true
-                        ? () => Get.toNamed(Routes.ticketCreate)
-                        : null,
-                    onProfile: () => Get.toNamed(Routes.profile),
-                    onRefresh: () async {
-                      await dashCtrl.loadStats();
-                      if (Get.isRegistered<TicketProvider>()) {
-                        await Get.find<TicketProvider>().loadTickets();
-                      }
-                      Get.snackbar(
-                        'Diperbarui',
-                        'Statistik dan daftar tiket sudah disegarkan',
-                        snackPosition: SnackPosition.BOTTOM,
-                        backgroundColor: Colors.white,
-                        colorText: const Color(0xFF0F172A),
-                        margin: const EdgeInsets.all(16),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  _RecentTicketsPanel(),
-                ],
-              );
-            }),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+              children: [
+                _TopBar(userName: userName, role: role),
+                const SizedBox(height: 18),
+                _HeroPanel(
+                  greeting: dashCtrl.greeting,
+                  userName: userName,
+                  role: role,
+                  totalTickets: total,
+                  openTickets: open,
+                ),
+                const SizedBox(height: 16),
+                _RoleMetricsPanel(
+                  isUser: user?.isUser == true,
+                  metrics: roleMetrics,
+                ),
+                const SizedBox(height: 16),
+                _SnapshotPanel(
+                  total: total,
+                  open: open,
+                  inProgress: inProgress,
+                  resolved: resolved,
+                  closed: closed,
+                ),
+                const SizedBox(height: 16),
+                _QuickActionsPanel(
+                  canCreateTicket: user?.isUser == true,
+                  onTickets: () => Get.toNamed(Routes.ticketList),
+                  onCreateTicket: user?.isUser == true
+                      ? () => Get.toNamed(Routes.ticketCreate)
+                      : null,
+                  onProfile: () => Get.toNamed(Routes.profile),
+                  onRefresh: () async {
+                    final ticketProvider = context.read<TicketProvider>();
+                    final scheme = Theme.of(context).colorScheme;
+                    await dashCtrl.loadStats();
+                    await ticketProvider.loadTickets();
+                    Get.snackbar(
+                      'Diperbarui',
+                      'Statistik dan daftar tiket sudah disegarkan',
+                      snackPosition: SnackPosition.BOTTOM,
+                      backgroundColor: scheme.inverseSurface,
+                      colorText: scheme.onInverseSurface,
+                      margin: const EdgeInsets.all(16),
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                const _RecentTicketsPanel(),
+              ],
+            ),
           ),
         ],
       ),
       bottomNavigationBar: _BottomNav(),
-      floatingActionButton: Obx(() {
-        final user = authService.currentUser.value;
-        if (user?.isUser != true) {
-          return const SizedBox.shrink();
-        }
-        return FloatingActionButton.extended(
-          onPressed: () => Get.toNamed(Routes.ticketCreate),
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Buat Tiket'),
-        );
-      }),
+      floatingActionButton: (user?.isUser == true)
+          ? FloatingActionButton.extended(
+              onPressed: () => Get.toNamed(Routes.ticketCreate),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Buat Tiket'),
+            )
+          : null,
     );
   }
 }
@@ -192,8 +187,7 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authService = Get.find<AuthService>();
-    final notificationService = Get.find<NotificationService>();
+    final unread = context.watch<NotificationProvider>().unreadCount;
 
     return Row(
       children: [
@@ -240,19 +234,11 @@ class _TopBar extends StatelessWidget {
               ),
             ],
           ),
-        ),
-        Obx(() {
-          final userId = authService.currentUser.value?.id;
-          final _ = notificationService.notifications.length;
-          final unread = userId == null
-              ? 0
-              : notificationService.unreadCountByUser(userId);
-          return _ActionIconButton(
+        ),        _ActionIconButton(
             icon: Icons.notifications_none_rounded,
             badgeCount: unread,
             onTap: () => Get.toNamed(Routes.notifications),
-          );
-        }),
+                    ),
         const SizedBox(width: 8),
         _ActionIconButton(
           icon: Icons.person_outline_rounded,
@@ -524,15 +510,12 @@ class _RoleMetricsPanel extends StatelessWidget {
 
   const _RoleMetricsPanel({required this.isUser, required this.metrics});
 
-  void _openTicketList(String filter, {String? note}) {
-    final ticketCtrl = Get.isRegistered<TicketProvider>()
-        ? Get.find<TicketProvider>()
-        : Get.put(TicketProvider());
-    ticketCtrl.setFilter(filter);
+  void _openTicketList(BuildContext context, String filter, {String? note}) {
+    context.read<TicketProvider>().setFilter(filter);
     Get.toNamed(Routes.ticketList);
 
     if (note != null && note.trim().isNotEmpty) {
-      Get.snackbar(
+                      Get.snackbar(
         'Info',
         note,
         snackPosition: SnackPosition.BOTTOM,
@@ -550,21 +533,21 @@ class _RoleMetricsPanel extends StatelessWidget {
               value: metrics['submitted'] ?? 0,
               icon: Icons.upload_file_rounded,
               color: const Color(0xFF2563EB),
-              onTap: () => _openTicketList('all'),
+              onTap: () => _openTicketList(context, 'all'),
             ),
             _RoleMetricData(
               label: 'On Going',
               value: metrics['ongoing'] ?? 0,
               icon: Icons.timelapse_rounded,
               color: const Color(0xFFD97706),
-              onTap: () => _openTicketList('in_progress'),
+              onTap: () => _openTicketList(context, 'in_progress'),
             ),
             _RoleMetricData(
               label: 'Finish',
               value: metrics['finish'] ?? 0,
               icon: Icons.verified_rounded,
               color: const Color(0xFF16A34A),
-              onTap: () => _openTicketList('closed'),
+              onTap: () => _openTicketList(context, 'closed'),
             ),
           ]
         : [
@@ -573,14 +556,14 @@ class _RoleMetricsPanel extends StatelessWidget {
               value: metrics['ticket_in'] ?? 0,
               icon: Icons.move_to_inbox_rounded,
               color: const Color(0xFF2563EB),
-              onTap: () => _openTicketList('all'),
+              onTap: () => _openTicketList(context, 'all'),
             ),
             _RoleMetricData(
               label: 'On Going',
               value: metrics['ongoing'] ?? 0,
               icon: Icons.timelapse_rounded,
               color: const Color(0xFFD97706),
-              onTap: () => _openTicketList('in_progress'),
+              onTap: () => _openTicketList(context, 'in_progress'),
             ),
             _RoleMetricData(
               label: 'Belum Ditangani',
@@ -588,6 +571,7 @@ class _RoleMetricsPanel extends StatelessWidget {
               icon: Icons.pending_actions_rounded,
               color: const Color(0xFF7C3AED),
               onTap: () => _openTicketList(
+                context,
                 'open',
                 note:
                     'Menampilkan tiket Open. Untuk melihat yang belum ditangani, cek tiket yang belum ada assignee.',
@@ -598,14 +582,14 @@ class _RoleMetricsPanel extends StatelessWidget {
               value: metrics['approved_finish'] ?? 0,
               icon: Icons.approval_rounded,
               color: const Color(0xFF16A34A),
-              onTap: () => _openTicketList('closed'),
+              onTap: () => _openTicketList(context, 'closed'),
             ),
             _RoleMetricData(
               label: 'Total Masuk',
               value: metrics['total_incoming'] ?? 0,
               icon: Icons.confirmation_number_rounded,
               color: const Color(0xFF0EA5E9),
-              onTap: () => _openTicketList('all'),
+              onTap: () => _openTicketList(context, 'all'),
             ),
           ];
 
@@ -1371,21 +1355,19 @@ class _RecentTicketsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ticketCtrl = Get.isRegistered<TicketProvider>()
-        ? Get.find<TicketProvider>()
-        : null;
+    final ticketCtrl = context.read<TicketProvider>();
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
       decoration: BoxDecoration(
-        color: _panelColor(context),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: _panelBorderColor(context)),
+        color: _softSurfaceColor(context),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _softBorderColor(context)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 12),
+            color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -1393,26 +1375,13 @@ class _RecentTicketsPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tiket terbaru',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: _titleColor(context),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Update terakhir dari tiket yang paling baru masuk',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: _mutedColor(context),
-                      ),
-                    ),
-                  ],
+              Text(
+                'Tiket Terbaru',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: _titleColor(context),
                 ),
               ),
               TextButton(
@@ -1421,11 +1390,10 @@ class _RecentTicketsPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          if (ticketCtrl == null)
-            const _EmptyRecentTickets()
-          else
-            Obx(() {
+          const SizedBox(height: 8),
+          AnimatedBuilder(
+            animation: ticketCtrl,
+            builder: (context, _) {
               if (ticketCtrl.isLoading.value) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 28),
@@ -1446,7 +1414,8 @@ class _RecentTicketsPanel extends StatelessWidget {
                   ],
                 ],
               );
-            }),
+            },
+          ),
         ],
       ),
     );
@@ -1611,37 +1580,40 @@ class _Pill extends StatelessWidget {
   }
 }
 
-class _BottomNav extends StatelessWidget {
-  final _index = 0.obs;
+class _BottomNav extends StatefulWidget {
+  @override
+  State<_BottomNav> createState() => _BottomNavState();
+}
+
+class _BottomNavState extends State<_BottomNav> {
+  int _index = 0;
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => NavigationBar(
-        selectedIndex: _index.value,
-        onDestinationSelected: (i) {
-          _index.value = i;
-          if (i == 1) Get.toNamed(Routes.ticketList);
-          if (i == 2) Get.toNamed(Routes.profile);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.list_alt_outlined),
-            selectedIcon: Icon(Icons.list_alt_rounded),
-            label: 'Tiket',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outlined),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profil',
-          ),
-        ],
-      ),
+    return NavigationBar(
+      selectedIndex: _index,
+      onDestinationSelected: (i) {
+        setState(() => _index = i);
+        if (i == 1) Get.toNamed(Routes.ticketList);
+        if (i == 2) Get.toNamed(Routes.profile);
+      },
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon: Icon(Icons.dashboard_rounded),
+          label: 'Dashboard',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.list_alt_outlined),
+          selectedIcon: Icon(Icons.list_alt_rounded),
+          label: 'Tiket',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outlined),
+          selectedIcon: Icon(Icons.person_rounded),
+          label: 'Profil',
+        ),
+      ],
     );
   }
 }
@@ -1686,31 +1658,45 @@ Color _panelColor(BuildContext context) {
 }
 
 Color _panelBorderColor(BuildContext context) {
+  final scheme = Theme.of(context).colorScheme;
   final isDark = Theme.of(context).brightness == Brightness.dark;
   return isDark
-      ? const Color(0xFF334155).withValues(alpha: 0.70)
-      : Colors.white.withValues(alpha: 0.85);
+      ? scheme.outlineVariant.withValues(alpha: 0.72)
+      : scheme.outlineVariant.withValues(alpha: 0.55);
 }
 
 Color _softSurfaceColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFF);
+  return Theme.of(context).colorScheme.surfaceContainerHighest;
 }
 
 Color _softBorderColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+  return Theme.of(context).colorScheme.outlineVariant;
 }
 
 Color _titleColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFFE2E8F0) : const Color(0xFF0F172A);
+  return Theme.of(context).colorScheme.onSurface;
 }
 
 Color _mutedColor(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-  return isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  return Theme.of(context).colorScheme.onSurfaceVariant;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

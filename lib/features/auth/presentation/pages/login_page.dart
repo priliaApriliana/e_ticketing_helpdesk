@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:provider/provider.dart';
 
 import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
+import 'package:e_ticketing_helpdesk/features/auth/presentation/widgets/password_action_dialog.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_widget.dart';
 
@@ -10,9 +12,10 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ctrl = Get.find<AuthProvider>();
+    final ctrl = context.read<AuthProvider>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final topSpacing = MediaQuery.sizeOf(context).height < 700 ? 14.0 : 24.0;
 
     final titleColor = isDark
         ? const Color(0xFFE2E8F0)
@@ -22,7 +25,7 @@ class LoginScreen extends StatelessWidget {
         : const Color(0xFF64748B);
     final surfaceColor = isDark
         ? const Color(0xFF0F172A).withValues(alpha: 0.94)
-        : Colors.white.withValues(alpha: 0.96);
+        : Colors.white.withValues(alpha: 0.97);
     final borderColor = isDark
         ? const Color(0xFF334155).withValues(alpha: 0.85)
         : Colors.white.withValues(alpha: 0.88);
@@ -69,7 +72,7 @@ class LoginScreen extends StatelessWidget {
               LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
                         minHeight: constraints.maxHeight,
@@ -78,9 +81,10 @@ class LoginScreen extends StatelessWidget {
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 420),
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              SizedBox(height: topSpacing),
                               AuthHeroSection(
                                 title: 'Selamat Datang!',
                                 subtitle:
@@ -92,12 +96,12 @@ class LoginScreen extends StatelessWidget {
                                   'Riwayat rapi',
                                 ],
                               ),
-                              const SizedBox(height: 18),
+                              const SizedBox(height: 20),
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
                                   color: surfaceColor,
-                                  borderRadius: BorderRadius.circular(28),
+                                  borderRadius: BorderRadius.circular(24),
                                   border: Border.all(color: borderColor),
                                   boxShadow: [
                                     BoxShadow(
@@ -145,11 +149,10 @@ class LoginScreen extends StatelessWidget {
                                         },
                                       ),
                                       const SizedBox(height: 14),
-                                      Obx(
-                                        () => TextFormField(
+                                      AnimatedBuilder(animation: ctrl, builder: (context, _) => TextFormField(
                                           controller: ctrl.passwordCtrl,
                                           obscureText:
-                                              ctrl.obscurePassword.value,
+                                              ctrl.obscurePassword,
                                           decoration: InputDecoration(
                                             labelText: 'Password',
                                             prefixIcon: const Icon(
@@ -157,13 +160,13 @@ class LoginScreen extends StatelessWidget {
                                             ),
                                             suffixIcon: IconButton(
                                               icon: Icon(
-                                                ctrl.obscurePassword.value
+                                                ctrl.obscurePassword
                                                     ? Icons
                                                           .visibility_off_outlined
                                                     : Icons.visibility_outlined,
                                               ),
                                               onPressed: () =>
-                                                  ctrl.obscurePassword.toggle(),
+                                                  ctrl.toggleObscurePassword(),
                                             ),
                                           ),
                                           validator: (v) {
@@ -181,23 +184,34 @@ class LoginScreen extends StatelessWidget {
                                       Align(
                                         alignment: Alignment.centerRight,
                                         child: TextButton(
-                                          onPressed: () => Get.snackbar(
-                                            'Info',
-                                            'Hubungi admin untuk reset password',
-                                            snackPosition: SnackPosition.BOTTOM,
-                                          ),
+                                          onPressed: () =>
+                                              showPasswordActionDialog(
+                                                title: 'Reset Password',
+                                                description:
+                                                    'Masukkan email akun dan password baru untuk mengganti password akun demo Anda.',
+                                                submitLabel: 'Reset Password',
+                                                showEmailField: true,
+                                                requireCurrentPassword: false,
+                                                onSubmit: (email, _, newPassword) =>
+                                                    context
+                                                        .read<AuthProvider>()
+                                                        .resetPassword(
+                                                          email,
+                                                          newPassword,
+                                                        ),
+                                              ),
                                           child: const Text('Lupa Password?'),
                                         ),
                                       ),
                                       const SizedBox(height: 6),
-                                      Obx(
-                                        () => SizedBox(
+                                      AnimatedBuilder(animation: ctrl, builder: (context, _) => SizedBox(
                                           width: double.infinity,
+                                          height: 52,
                                           child: ElevatedButton(
-                                            onPressed: ctrl.isLoading.value
+                                            onPressed: ctrl.isLoading
                                                 ? null
                                                 : ctrl.login,
-                                            child: ctrl.isLoading.value
+                                            child: ctrl.isLoading
                                                 ? const SizedBox(
                                                     height: 20,
                                                     width: 20,
@@ -212,25 +226,86 @@ class LoginScreen extends StatelessWidget {
                                         ),
                                       ),
                                       const SizedBox(height: 14),
-                                      Wrap(
-                                        alignment: WrapAlignment.center,
+                                      Center(
+                                        child: Wrap(
+                                          alignment: WrapAlignment.center,
+                                          crossAxisAlignment:
+                                              WrapCrossAlignment.center,
+                                          spacing: 4,
+                                          runSpacing: 0,
+                                          children: [
+                                            Text(
+                                              'Belum punya akun?',
+                                              style: TextStyle(
+                                                color: mutedColor,
+                                              ),
+                                            ),
+                                            TextButton(
+                                              style: TextButton.styleFrom(
+                                                minimumSize: Size.zero,
+                                                tapTargetSize:
+                                                    MaterialTapTargetSize
+                                                        .shrinkWrap,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 4,
+                                                    ),
+                                              ),
+                                              onPressed: () =>
+                                                  Get.toNamed(Routes.register),
+                                              child: const Text(
+                                                'Daftar Sekarang',
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
                                         crossAxisAlignment:
-                                            WrapCrossAlignment.center,
-                                        spacing: 4,
-                                        runSpacing: 0,
+                                            CrossAxisAlignment.center,
                                         children: [
-                                          Text(
-                                            'Belum punya akun?',
-                                            style: TextStyle(color: mutedColor),
+                                          Expanded(
+                                            child: Divider(
+                                              color: mutedColor.withValues(
+                                                alpha: 0.35,
+                                              ),
+                                            ),
                                           ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Get.toNamed(Routes.register),
-                                            child: const Text(
-                                              'Daftar Sekarang',
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                            ),
+                                            child: Text(
+                                              'atau',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                color: mutedColor,
+                                                fontSize: 12,
+                                                height: 1,
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            child: Divider(
+                                              color: mutedColor.withValues(
+                                                alpha: 0.35,
+                                              ),
                                             ),
                                           ),
                                         ],
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Align(
+                                        alignment: Alignment.center,
+                                        child: Text(
+                                          'Pilih akun demo di bawah untuk auto-fill email & password.',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: mutedColor,
+                                            fontSize: 12,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -260,6 +335,14 @@ class LoginScreen extends StatelessWidget {
                                             fontWeight: FontWeight.w800,
                                             color: titleColor,
                                           ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Tap salah satu akun untuk login lebih cepat',
+                                      style: TextStyle(
+                                        color: mutedColor,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                     const SizedBox(height: 10),
                                     _DemoAccountTile(
@@ -319,44 +402,67 @@ class _DemoAccountTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final roleIcon = switch (role) {
+      'Admin' => Icons.admin_panel_settings_outlined,
+      'Helpdesk' => Icons.support_agent_outlined,
+      _ => Icons.person_outline,
+    };
+
     return InkWell(
       onTap: () {
         ctrl.emailCtrl.text = email;
         ctrl.passwordCtrl.text = '123456';
       },
       borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withValues(alpha: 0.68),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+        ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 color: const Color(0xFF7C3AED).withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(999),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(
-                role,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
-                ),
-              ),
+              child: Icon(roleIcon, size: 18, color: const Color(0xFF5B21B6)),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                email,
-                style: TextStyle(fontSize: 12, color: mutedColor),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    role,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    email,
+                    style: TextStyle(fontSize: 12, color: mutedColor),
+                  ),
+                ],
               ),
             ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: mutedColor),
           ],
         ),
       ),
     );
   }
 }
+
 
 
 

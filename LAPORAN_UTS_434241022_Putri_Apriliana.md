@@ -1,4 +1,4 @@
-﻿# LAPORAN UTS
+# LAPORAN UTS
 
 ## E-TICKETING HELPDESK MOBILE APPLICATION
 
@@ -44,7 +44,7 @@ Tujuan pengembangan aplikasi E-Ticketing Helpdesk:
 
 **Fitur-fitur yang diimplementasikan:**
 
-- Autentikasi pengguna (login, register)
+- Autentikasi pengguna (login, register, reset password, ubah password)
 - Dashboard dengan role-specific KPI metrics
 - Manajemen tiket (create, read, update)
 - Sistem penugasan tiket (assignment)
@@ -58,6 +58,19 @@ Tujuan pengembangan aplikasi E-Ticketing Helpdesk:
 - Authentication token diwakili dengan GetStorage
 - Testing manual, belum automated testing
 
+### 1.4 Ringkasan Isi Laporan (Sesuai Requirement Tugas)
+
+Laporan ini disusun agar langsung memenuhi 4 komponen utama penilaian:
+
+1. **Penjelasan aplikasi sesuai requirement tugas**
+   Analisis kebutuhan fungsional/non-fungsional, alur fitur, arsitektur, dan implementasi kode dijelaskan pada Bab 2, Bab 4, Bab 5, dan Bab 6.
+2. **Wireframe aplikasi**
+   Wireframe setiap halaman utama disajikan pada Bab 3.1 (Login, Register, Dashboard User/Admin, Ticket List, Ticket Detail, Ticket Create, dan Profile).
+3. **High-fidelity (screenshot aplikasi berjalan)**
+   Bukti high-fidelity berupa screenshot implementasi aplikasi disajikan pada Bab 9 (Lampiran: Screenshot Aplikasi).
+4. **Link GitHub repository**
+   Source code tersedia pada: https://github.com/priliaApriliana/e_ticketing_helpdesk.git (juga dicantumkan kembali pada bagian referensi tautan proyek).
+
 ---
 
 ## 2. ANALISIS KEBUTUHAN
@@ -70,6 +83,7 @@ Tujuan pengembangan aplikasi E-Ticketing Helpdesk:
 - [RF.3] Validasi input email dan password
 - [RF.4] Token management dan session persistence
 - [RF.5] Logout functionality
+- [RF.5a] Reset password dari halaman login (Lupa Password)
 
 #### 2.1.2 Modul Dashboard
 - [RF.6] Dashboard dengan greeting pesan dinamis
@@ -87,7 +101,7 @@ Tujuan pengembangan aplikasi E-Ticketing Helpdesk:
 - [RF.14] Update ticket status
 - [RF.15] Assign ticket ke helpdesk/technical staff
 - [RF.16] Add comments pada tiket
-- [RF.17] Status workflow: open → in_progress → resolved → closed
+- [RF.17] Status workflow: open -> in_progress -> resolved -> closed
 
 #### 2.1.4 Modul Role-Based Access Control
 - [RF.18] 4 role system: admin, helpdesk, technical_support, user
@@ -96,7 +110,7 @@ Tujuan pengembangan aplikasi E-Ticketing Helpdesk:
 
 #### 2.1.5 Modul Profile
 - [RF.21] View user profile
-- [RF.22] Change password
+- [RF.22] Change password (dengan validasi password lama)
 - [RF.23] Logout
 
 ### 2.2 Requirement Non-Fungsional
@@ -118,7 +132,15 @@ Tujuan pengembangan aplikasi E-Ticketing Helpdesk:
 
 #### 2.2.4 Compatibility
 - [NF.10] Target Android API 21+
-- [NF.11] Flutter stable channel ≥3.11.0
+- [NF.11] Flutter stable channel =3.11.0
+
+### 2.3 Tech Stack yang Digunakan
+
+1. **Framework:** Flutter (Dart) - cross-platform Android dan iOS.
+2. **State Management:** Provider/ChangeNotifier sebagai state utama UI, dengan GetX (GetxService + routing + snackbar) untuk kebutuhan service dan navigasi.
+3. **Local Storage:** GetStorage - persistensi data lokal tanpa backend.
+4. **Arsitektur:** Feature-based layered architecture dengan pemisahan `core/` dan `features/`, serta layer repository, service, dan provider.
+5. **UI:** Material Design 3 dengan custom theme dan aksen gradien biru-ungu pada beberapa halaman.
 
 ---
 
@@ -130,26 +152,25 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 
 #### 3.1.1 Login Screen (Wireframe)
 
-`
-┌──────────────────────────────────────┐
-│                                      │
-│        [LOGO APLIKASI]               │
-│                                      │
-│    SELAMAT DATANG                    │
-│                                      │
-│   Email:                             │
-│   [________________________]          │
-│                                      │
-│   Password:                          │
-│   [________________________] [👁]     │
-│                                      │
-│   [   MASUK BUTTON BLUE   ]          │
-│                                      │
-│   Belum punya akun? [Daftar sini]   │
-│                                      │
-└──────────────────────────────────────┘
-`
-
+```
++--------------------------------------+
+�                                      �
+�        [LOGO APLIKASI]               �
+�                                      �
+�    SELAMAT DATANG                    �
+�                                      �
+�   Email:                             �
+�   [________________________]          �
+�                                      �
+�   Password:                          �
+�   [________________________] [??]     �
+�                                      �
+�   [   MASUK BUTTON BLUE   ]          �
+�                                      �
+�   Belum punya akun? [Daftar sini]   �
+�                                      �
++--------------------------------------+
+```
 **Deskripsi:**
 - Form login dengan email dan password field
 - Field validation dalam real-time
@@ -159,27 +180,26 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 
 #### 3.1.2 Register Screen (Wireframe)
 
-`
-┌──────────────────────────────────────┐
-│  ◄ Back          Daftar Akun Baru    │
-├──────────────────────────────────────┤
-│                                      │
-│   Email:                             │
-│   [________________________]          │
-│                                      │
-│   Password:                          │
-│   [________________________] [👁]     │
-│                                      │
-│   Konfirmasi Password:               │
-│   [________________________] [👁]     │
-│                                      │
-│   [   DAFTAR BUTTON BLUE   ]          │
-│                                      │
-│   Sudah punya akun? [Masuk]          │
-│                                      │
-└──────────────────────────────────────┘
-`
-
+```
++--------------------------------------+
+�  ? Back          Daftar Akun Baru    �
++--------------------------------------�
+�                                      �
+�   Email:                             �
+�   [________________________]          �
+�                                      �
+�   Password:                          �
+�   [________________________] [??]     �
+�                                      �
+�   Konfirmasi Password:               �
+�   [________________________] [??]     �
+�                                      �
+�   [   DAFTAR BUTTON BLUE   ]          �
+�                                      �
+�   Sudah punya akun? [Masuk]          �
+�                                      �
++--------------------------------------+
+```
 **Deskripsi:**
 - Form registrasi dengan validasi
 - Email duplicate check
@@ -189,98 +209,96 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 
 #### 3.1.3 Dashboard User (3 KPI) - Wireframe
 
-`
-┌──────────────────────────────────────┐
-│  Dashboard            [Menu ⋮]       │
-├──────────────────────────────────────┤
-│                                      │
-│  Halo, Putri Apriliana! 👋          │
-│  Senin, 18 April 2024                │
-│                                      │
-│  ┌─────────────┐ ┌─────────────┐    │
-│  │   📤        │ │   ⏳        │    │
-│  │   Total     │ │   Diproses  │    │
-│  │   Disubmit  │ │             │    │
-│  │      5      │ │      2      │    │
-│  └─────────────┘ └─────────────┘    │
-│  (Clickable KPI Cards)              │
-│                                      │
-│  ┌─────────────┐                    │
-│  │   ✓         │                    │
-│  │   Selesai   │                    │
-│  │             │                    │
-│  │      3      │                    │
-│  └─────────────┘                    │
-│                                      │
-│  ─────────────────────────────────  │
-│  TIKET TERBARU                       │
-│  ─────────────────────────────────  │
-│                                      │
-│  ID-001  | Internet tidak konek     │
-│  Teknis | 2 jam lalu                │
-│  Status: [Diproses]                 │
-│                                      │
-│  ID-002  | Email error              │
-│  Email | 1 jam lalu                 │
-│  Status: [Menunggu Helpdesk]        │
-│                                      │
-│  ─────────────────────────────────  │
-│  [➕ Buat Tiket]  [👤 Profil]       │
-│                                      │
-└──────────────────────────────────────┘
-`
-
+```
++--------------------------------------+
+�  Dashboard            [Menu ?]       �
++--------------------------------------�
+�                                      �
+�  Halo, Putri Apriliana! ??          �
+�  Senin, 18 April 2024                �
+�                                      �
+�  +-------------+ +-------------+    �
+�  �   ??        � �   ?        �    �
+�  �   Total     � �   Diproses  �    �
+�  �   Disubmit  � �             �    �
+�  �      5      � �      2      �    �
+�  +-------------+ +-------------+    �
+�  (Clickable KPI Cards)              �
+�                                      �
+�  +-------------+                    �
+�  �   ?         �                    �
+�  �   Selesai   �                    �
+�  �             �                    �
+�  �      3      �                    �
+�  +-------------+                    �
+�                                      �
+�  ---------------------------------  �
+�  TIKET TERBARU                       �
+�  ---------------------------------  �
+�                                      �
+�  ID-001  | Internet tidak konek     �
+�  Teknis | 2 jam lalu                �
+�  Status: [Diproses]                 �
+�                                      �
+�  ID-002  | Email error              �
+�  Email | 1 jam lalu                 �
+�  Status: [Menunggu Helpdesk]        �
+�                                      �
+�  ---------------------------------  �
+�  [? Buat Tiket]  [?? Profil]       �
+�                                      �
++--------------------------------------+
+```
 **Deskripsi:**
 - Greeting message dinamis
 - 3 KPI cards (Total Submitted, Ongoing, Finished)
-- Each KPI clickable → filter ticket list
+- Each KPI clickable ? filter ticket list
 - Recent tickets preview (2-3 latest)
 - Quick action buttons
 
 #### 3.1.4 Dashboard Admin (5 KPI) - Wireframe
 
-`
-┌──────────────────────────────────────┐
-│  Dashboard Admin       [Menu ⋮]      │
-├──────────────────────────────────────┤
-│                                      │
-│  Halo, Admin User! 👋               │
-│  Senin, 18 April 2024                │
-│                                      │
-│  ┌──────────┐ ┌──────────┐          │
-│  │   📥     │ │   ⏳     │          │
-│  │  Masuk   │ │ Diproses │          │
-│  │    12    │ │    5     │          │
-│  └──────────┘ └──────────┘          │
-│                                      │
-│  ┌──────────┐ ┌──────────┐          │
-│  │   ⚠️     │ │   ✅     │          │
-│  │ Tertunda │ │  Selesai │          │
-│  │    3     │ │    8     │          │
-│  └──────────┘ └──────────┘          │
-│                                      │
-│  ┌──────────┐                       │
-│  │   📊     │                       │
-│  │   Total  │                       │
-│  │    28    │                       │
-│  └──────────┘                       │
-│  (5 Clickable KPI Cards)             │
-│                                      │
-│  ─────────────────────────────────  │
-│  TIKET TERBARU                       │
-│  ─────────────────────────────────  │
-│                                      │
-│  ID-001 | User-001                  │
-│  Internet Down | Teknis              │
-│  Assigned: Helpdesk-A | Diproses    │
-│                                      │
-│  ID-002 | User-002                  │
-│  Email Error | Email                 │
-│  Assigned: (Unassigned) | Menunggu  │
-│                                      │
-└──────────────────────────────────────┘
-`
-
+```
++--------------------------------------+
+�  Dashboard Admin       [Menu ?]      �
++--------------------------------------�
+�                                      �
+�  Halo, Admin User! ??               �
+�  Senin, 18 April 2024                �
+�                                      �
+�  +----------+ +----------+          �
+�  �   ??     � �   ?     �          �
+�  �  Masuk   � � Diproses �          �
+�  �    12    � �    5     �          �
+�  +----------+ +----------+          �
+�                                      �
+�  +----------+ +----------+          �
+�  �   ??     � �   ?     �          �
+�  � Tertunda � �  Selesai �          �
+�  �    3     � �    8     �          �
+�  +----------+ +----------+          �
+�                                      �
+�  +----------+                       �
+�  �   ??     �                       �
+�  �   Total  �                       �
+�  �    28    �                       �
+�  +----------+                       �
+�  (5 Clickable KPI Cards)             �
+�                                      �
+�  ---------------------------------  �
+�  TIKET TERBARU                       �
+�  ---------------------------------  �
+�                                      �
+�  ID-001 | User-001                  �
+�  Internet Down | Teknis              �
+�  Assigned: Helpdesk-A | Diproses    �
+�                                      �
+�  ID-002 | User-002                  �
+�  Email Error | Email                 �
+�  Assigned: (Unassigned) | Menunggu  �
+�                                      �
++--------------------------------------+
+```
 **Deskripsi:**
 - 5 KPI cards system-wide statistics
 - Advanced filtering options
@@ -289,42 +307,41 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 
 #### 3.1.5 Ticket List (Wireframe)
 
-`
-┌──────────────────────────────────────┐
-│  Tiket Saya     [Filter 🔽]          │
-├──────────────────────────────────────┤
-│                                      │
-│  [Search...] [Status ▼] [Priority ▼] │
-│                                      │
-│  ┌────────────────────────────────┐  │
-│  │ ID-001           [Diproses]    │  │
-│  │ Internet tidak konek           │  │
-│  │ Teknis | 2 jam lalu            │  │
-│  └────────────────────────────────┘  │
-│  (Clickable ticket card)             │
-│                                      │
-│  ┌────────────────────────────────┐  │
-│  │ ID-002           [Menunggu]    │  │
-│  │ Email tidak bisa diterima      │  │
-│  │ Email | 1 jam lalu             │  │
-│  └────────────────────────────────┘  │
-│                                      │
-│  ┌────────────────────────────────┐  │
-│  │ ID-003           [Selesai]     │  │
-│  │ Printer tidak muncul di list   │  │
-│  │ Teknis | 30 menit lalu         │  │
-│  └────────────────────────────────┘  │
-│                                      │
-│  [LOAD MORE]                         │
-│                                      │
-│  ┌─────────────┐                    │
-│  │  ➕ Buat    │  (FAB Buttons)      │
-│  │  Tiket      │                    │
-│  └─────────────┘                    │
-│                                      │
-└──────────────────────────────────────┘
-`
-
+```
++--------------------------------------+
+�  Tiket Saya     [Filter ??]          �
++--------------------------------------�
+�                                      �
+�  [Search...] [Status ?] [Priority ?] �
+�                                      �
+�  +--------------------------------+  �
+�  � ID-001           [Diproses]    �  �
+�  � Internet tidak konek           �  �
+�  � Teknis | 2 jam lalu            �  �
+�  +--------------------------------+  �
+�  (Clickable ticket card)             �
+�                                      �
+�  +--------------------------------+  �
+�  � ID-002           [Menunggu]    �  �
+�  � Email tidak bisa diterima      �  �
+�  � Email | 1 jam lalu             �  �
+�  +--------------------------------+  �
+�                                      �
+�  +--------------------------------+  �
+�  � ID-003           [Selesai]     �  �
+�  � Printer tidak muncul di list   �  �
+�  � Teknis | 30 menit lalu         �  �
+�  +--------------------------------+  �
+�                                      �
+�  [LOAD MORE]                         �
+�                                      �
+�  +-------------+                    �
+�  �  ? Buat    �  (FAB Buttons)      �
+�  �  Tiket      �                    �
+�  +-------------+                    �
+�                                      �
++--------------------------------------+
+```
 **Deskripsi:**
 - Search bar untuk cari tiket
 - Filter by status, priority, category
@@ -334,50 +351,49 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 
 #### 3.1.6 Ticket Detail (Wireframe)
 
-`
-┌──────────────────────────────────────┐
-│  ◄ Back      Detail Tiket      [⋮]  │
-├──────────────────────────────────────┤
-│                                      │
-│  ID-001 | Internet tidak konek       │
-│  [🔴 High] [Diproses]               │
-│  Teknis | Dibuat 2 jam lalu          │
-│                                      │
-│  Status Timeline:                    │
-│  ● Open ─── ● Diproses ─ ○ Selesai  │
-│             ▲ (Current)              │
-│                                      │
-│  Deskripsi:                          │
-│  Internet kantor di lokasi A tidak   │
-│  bisa connect sejak pagi. Sudah      │
-│  coba restart modem tapi tetap tidak │
-│  bisa. Perlu bantuan teknisi.        │
-│                                      │
-│  Informasi Teknis:                   │
-│  Dibuat: 18 April 2024, 10:00        │
-│  Assigned to: Helpdesk-A             │
-│  Update terakhir: 18 April, 11:30    │
-│                                      │
-│  Komentar (3):                       │
-│  ┌────────────────────────────────┐  │
-│  │ Helpdesk-A - 11:30             │  │
-│  │ Kami sudah cek dari sistem.    │  │
-│  │ Perlu akses fisik ke lokasi.   │  │
-│  └────────────────────────────────┘  │
-│                                      │
-│  ┌────────────────────────────────┐  │
-│  │ User-001 - 11:45               │  │
-│  │ Baik, kami tunggu teknisinya   │  │
-│  └────────────────────────────────┘  │
-│                                      │
-│  Tulis komentar: [___________] [>]   │
-│                                      │
-│  [Assign] [Update Status ▼]          │
-│  [Hapus]                             │
-│                                      │
-└──────────────────────────────────────┘
-`
-
+```
++--------------------------------------+
+�  ? Back      Detail Tiket      [?]  �
++--------------------------------------�
+�                                      �
+�  ID-001 | Internet tidak konek       �
+�  [?? High] [Diproses]               �
+�  Teknis | Dibuat 2 jam lalu          �
+�                                      �
+�  Status Timeline:                    �
+�  ? Open --- ? Diproses - ? Selesai  �
+�             -> (Current)              �
+�                                      �
+�  Deskripsi:                          �
+�  Internet kantor di lokasi A tidak   �
+�  bisa connect sejak pagi. Sudah      �
+�  coba restart modem tapi tetap tidak �
+�  bisa. Perlu bantuan teknisi.        �
+�                                      �
+�  Informasi Teknis:                   �
+�  Dibuat: 18 April 2024, 10:00        �
+�  Assigned to: Helpdesk-A             �
+�  Update terakhir: 18 April, 11:30    �
+�                                      �
+�  Komentar (3):                       �
+�  +--------------------------------+  �
+�  � Helpdesk-A - 11:30             �  �
+�  � Kami sudah cek dari sistem.    �  �
+�  � Perlu akses fisik ke lokasi.   �  �
+�  +--------------------------------+  �
+�                                      �
+�  +--------------------------------+  �
+�  � User-001 - 11:45               �  �
+�  � Baik, kami tunggu teknisinya   �  �
+�  +--------------------------------+  �
+�                                      �
+�  Tulis komentar: [___________] [>]   �
+�                                      �
+�  [Assign] [Update Status ?]          �
+�  [Hapus]                             �
+�                                      �
++--------------------------------------+
+```
 **Deskripsi:**
 - Full ticket information
 - Priority & status badge
@@ -388,38 +404,37 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 
 #### 3.1.7 Ticket Create (Wireframe)
 
-`
-┌──────────────────────────────────────┐
-│  ◄ Back       Buat Tiket Baru        │
-├──────────────────────────────────────┤
-│                                      │
-│  Judul *                             │
-│  [________________________________]  │
-│                                      │
-│  Kategori *                          │
-│  [Teknis ▼]                         │
-│                                      │
-│  Prioritas *                         │
-│  ○ Rendah  ● Normal  ○ Tinggi       │
-│                                      │
-│  Deskripsi *                         │
-│  ┌────────────────────────────────┐  │
-│  │ Jelaskan masalah yang anda    │  │
-│  │ alami secara detail...         │  │
-│  │                                │  │
-│  │                                │  │
-│  │                                │  │
-│  └────────────────────────────────┘  │
-│                                      │
-│  Attachment (Optional)               │
-│  [📎 Pilih File]                     │
-│                                      │
-│  [   KIRIM TIKET BLUE  ]             │
-│  [   BATAL GRAY       ]              │
-│                                      │
-└──────────────────────────────────────┘
-`
-
+```
++--------------------------------------+
+�  ? Back       Buat Tiket Baru        �
++--------------------------------------�
+�                                      �
+�  Judul *                             �
+�  [________________________________]  �
+�                                      �
+�  Kategori *                          �
+�  [Teknis ?]                         �
+�                                      �
+�  Prioritas *                         �
+�  ? Rendah  ? Normal  ? Tinggi       �
+�                                      �
+�  Deskripsi *                         �
+�  +--------------------------------+  �
+�  � Jelaskan masalah yang anda    �  �
+�  � alami secara detail...         �  �
+�  �                                �  �
+�  �                                �  �
+�  �                                �  �
+�  +--------------------------------+  �
+�                                      �
+�  Attachment (Optional)               �
+�  [?? Pilih File]                     �
+�                                      �
+�  [   KIRIM TIKET BLUE  ]             �
+�  [   BATAL GRAY       ]              �
+�                                      �
++--------------------------------------+
+```
 **Deskripsi:**
 - Title input (required)
 - Category dropdown (required)
@@ -430,40 +445,39 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 
 #### 3.1.8 Profile Screen (Wireframe)
 
-`
-┌──────────────────────────────────────┐
-│  Profil              [Edit ✏️]       │
-├──────────────────────────────────────┤
-│                                      │
-│              👤                      │
-│       (Avatar Placeholder)           │
-│                                      │
-│      Putri Apriliana                 │
-│      434241022                       │
-│      putri@email.com                 │
-│      Role: User                      │
-│      Bergabung: 18 April 2024        │
-│                                      │
-│  ─────────────────────────────────  │
-│  Keamanan                             │
-│  ─────────────────────────────────  │
-│                                      │
-│  [🔐 Ubah Password]                  │
-│  [🔔 Notifikasi] [Toggle]            │
-│                                      │
-│  ─────────────────────────────────  │
-│  Aksi                                 │
-│  ─────────────────────────────────  │
-│                                      │
-│  [  📞 HUBUNGI SUPPORT  ]            │
-│  [  🚪 KELUAR / LOGOUT  ]            │
-│                                      │
-│  Versi: 1.0.0                        │
-│  © 2024 E-Ticketing Helpdesk         │
-│                                      │
-└──────────────────────────────────────┘
-`
-
+```
++--------------------------------------+
+�  Profil              [Edit ??]       �
++--------------------------------------�
+�                                      �
+�              ->?                      �
+�       (Avatar Placeholder)           �
+�                                      �
+�      Putri Apriliana                 �
+�      434241022                       �
+�      putri@email.com                 �
+�      Role: User                      �
+�      Bergabung: 18 April 2024        �
+�                                      �
+�  ---------------------------------  �
+�  Keamanan                             �
+�  ---------------------------------  �
+�                                      �
+�  [?? Ubah Password]                  �
+�  [?? Notifikasi] [Toggle]            �
+�                                      �
+�  ---------------------------------  �
+�  Aksi                                 �
+�  ---------------------------------  �
+�                                      �
+�  [  ?? HUBUNGI SUPPORT  ]            �
+�  [  ?? KELUAR / LOGOUT  ]            �
+�                                      �
+�  Versi: 1.0.0                        �
+�  � 2024 E-Ticketing Helpdesk         �
+�                                      �
++--------------------------------------+
+```
 **Deskripsi:**
 - User profile info display
 - Change password button
@@ -493,10 +507,10 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 
 | Status | Label | Color | Icon |
 |--------|-------|-------|------|
-| Open | Menunggu Helpdesk | Orange | ⏱️ |
-| In Progress | Diproses | Blue | ⚙️ |
-| Resolved | Selesai Teknis | Green | ✓ |
-| Closed | Selesai | Gray | ✓✓ |
+| Open | Menunggu Helpdesk | Orange | ?? |
+| In Progress | Diproses | Blue | ?? |
+| Resolved | Selesai Teknis | Green | ? |
+| Closed | Selesai | Gray | ?? |
 
 #### 3.2.3 Typography
 
@@ -535,7 +549,7 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 - KPI cards: max-width constrained to prevent overflow
 - Status badges: ConstrainedBox(maxWidth: 118) untuk prevent expansion
 - Text ellipsis: maxLines: 1-2 + TextOverflow.ellipsis untuk long text
-- Font scaling: Title 13→12px, subtitle 10→9px untuk small screens
+- Font scaling: Title 13?12px, subtitle 10?9px untuk small screens
 
 **Layout Adjustments:**
 - childAspectRatio: 1.10 (was 1.25) untuk grid spacing
@@ -548,126 +562,112 @@ Berikut adalah wireframe untuk setiap screen aplikasi:
 
 - **Framework:** Flutter (cross-platform mobile development)
 - **Language:** Dart (object-oriented, strongly-typed)
-- **State Management:** GetX (lightweight DI + routing + state)
+- **State Management:** Provider / ChangeNotifier untuk state utama, dengan GetX (GetxService, routing, snackbar) tetap dipakai seperlunya
 - **Local Storage:** GetStorage (key-value persistence)
 - **Design System:** Material Design 3 (modern, accessible)
-- **Architecture Pattern:** MVC + Service Layer
+- **Architecture Pattern:** Feature-based architecture + Repository Layer + Service Layer + Provider
 
 #### 3.4.2 Project Directory Structure
 
-`
+```
 lib/
-├── app/
-│   ├── data/
-│   │   ├── models/
-│   │   │   ├── user_model.dart
-│   │   │   ├── ticket_model.dart
-│   │   │   └── comment_model.dart
-│   │   ├── services/
-│   │   │   ├── auth_service.dart
-│   │   │   └── ticket_service.dart
-│   │   └── helpers/
-│   │       └── validators.dart
-│   │
-│   ├── modules/ (Features)
-│   │   ├── auth/
-│   │   │   ├── controllers/
-│   │   │   │   └── auth_controller.dart
-│   │   │   └── screens/
-│   │   │       ├── login_screen.dart
-│   │   │       └── register_screen.dart
-│   │   │
-│   │   ├── dashboard/
-│   │   │   ├── controllers/
-│   │   │   │   └── dashboard_controller.dart
-│   │   │   └── screens/
-│   │   │       └── dashboard_screen.dart
-│   │   │
-│   │   ├── ticket/
-│   │   │   ├── controllers/
-│   │   │   │   └── ticket_controller.dart
-│   │   │   └── screens/
-│   │   │       ├── ticket_list_screen.dart
-│   │   │       ├── ticket_detail_screen.dart
-│   │   │       └── ticket_create_screen.dart
-│   │   │
-│   │   └── profile/
-│   │       ├── controllers/ (if needed)
-│   │       └── screens/
-│   │           └── profile_screen.dart
-│   │
-│   ├── routes/
-│   │   └── app_routes.dart
-│   │
-│   ├── theme/
-│   │   └── app_theme.dart
-│   │
-│   └── main.dart
-│
-└── assets/ (images, fonts, etc)
-`
-
++-- core/
+?   +-- routes/
+?   ?   +-- app_routes.dart
+?   ?   +-- app_pages.dart
+?   +-- services/
+?   ?   +-- auth_service.dart
+?   ?   +-- ticket_service.dart
+?   ?   +-- notification_service.dart
+?   +-- theme/
+?       +-- app_theme.dart
+?
++-- features/
+?   +-- auth/
+?   ?   +-- data/repositories/
+?   ?   +-- presentation/pages/
+?   ?   +-- presentation/providers/
+?   ?   +-- presentation/widgets/
+?   +-- splash/
+?   ?   +-- data/models/
+?   ?   +-- data/repositories/
+?   ?   +-- presentation/pages/
+?   +-- dashboard/
+?   ?   +-- data/models/
+?   ?   +-- data/repositories/
+?   ?   +-- presentation/pages/
+?   ?   +-- presentation/providers/
+?   +-- ticket/
+?   ?   +-- data/models/
+?   ?   +-- data/repositories/
+?   ?   +-- presentation/pages/
+?   ?   +-- presentation/providers/
+?   +-- notification/
+?   ?   +-- data/models/
+?   ?   +-- presentation/pages/
+?   ?   +-- presentation/providers/
+?   +-- profile/
+?   ?   +-- data/models/
+?   ?   +-- data/repositories/
+?   ?   +-- presentation/pages/
+?   ?   +-- presentation/providers/
+?
++-- main.dart
+```
 #### 3.4.3 Layer Architecture
 
-`
-┌─────────────────────────────────────┐
-│    PRESENTATION LAYER (UI)          │
-│  Screens, Widgets, Controllers      │
-│  (Login, Dashboard, TicketList...)  │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────▼──────────────────────┐
-│   BUSINESS LOGIC LAYER (GetX)       │
-│  Controllers, State Management,      │
-│  Reactive updates (Obx, Rx<T>.obs)  │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────▼──────────────────────┐
-│    DATA ACCESS LAYER (Services)     │
-│  AuthService, TicketService         │
-│  Business rules, permission logic   │
-└──────────────┬──────────────────────┘
-               │
-┌──────────────▼──────────────────────┐
-│      DATA LAYER (Storage)           │
-│  GetStorage (local persistence)     │
-│  In-memory cache, models            │
-└─────────────────────────────────────┘
-`
-
----
-
+```
++-------------------------------------+
+| PRESENTATION LAYER (UI)             |
+| Pages, widgets, reusable components |
++-------------------------------------+
+                 |
++-------------------------------------+
+| STATE LAYER (Provider)              |
+| ChangeNotifier, notifyListeners     |
++-------------------------------------+
+                 |
++-------------------------------------+
+| DATA ACCESS LAYER (Repository)      |
+| AuthRepository, TicketRepository    |
++-------------------------------------+
+                 |
++-------------------------------------+
+| SERVICE + STORAGE LAYER             |
+| AuthService, TicketService,         |
+| NotificationService, GetStorage     |
++-------------------------------------+
+```
 ## 4. IMPLEMENTASI
 
 ### 4.1 Autentikasi dan User Management
 
 #### 4.1.1 User Model (Data Class)
 
-`dart
+```dart
 class UserModel {
   final String id;
-  final String email;
-  final String password;
   final String name;
-  final String role; // 'admin', 'helpdesk', 'technical_support', 'user'
-  final DateTime createdAt;
+  final String email;
+  final String role; // 'user', 'helpdesk', 'technical_support', 'admin'
+  final String? avatar;
 
   UserModel({
     required this.id,
-    required this.email,
-    required this.password,
     required this.name,
+    required this.email,
     required this.role,
-    required this.createdAt,
+    this.avatar,
   });
 
-  // Convenience getters
   bool get isAdmin => role == 'admin';
-  bool get isHelpdesk => role == 'helpdesk';
+  bool get isHelpdesk => role == 'helpdesk' || role == 'admin';
+  bool get isTechnicalSupport => role == 'technical_support';
+  bool get isStaff =>
+      role == 'helpdesk' || role == 'admin' || role == 'technical_support';
   bool get isUser => role == 'user';
 }
-`
-
+```
 **Penjelasan:**
 - Model menyimpan informasi user dengan role sebagai pembeda akses
 - Role system: 4 tipe (admin, helpdesk, technical_support, user)
@@ -675,192 +675,102 @@ class UserModel {
 
 #### 4.1.2 Auth Service (Business Logic)
 
-`dart
-class AuthService {
-  static final AuthService _instance = AuthService._internal();
-  final _storage = GetStorage();
+```dart
+class AuthService extends GetxService {
+  final _box = GetStorage();
+  final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
 
-  factory AuthService() {
-    return _instance;
-  }
-
-  AuthService._internal();
-
-  // Mock users untuk testing
-  final List<UserModel> _users = [
-    UserModel(
-      id: '1',
-      email: 'admin@test.com',
-      password: '123456',
-      name: 'Admin User',
-      role: 'admin',
-      createdAt: DateTime.now(),
-    ),
-    UserModel(
-      id: '2',
-      email: 'helpdesk@test.com',
-      password: '123456',
-      name: 'Helpdesk Staff',
-      role: 'helpdesk',
-      createdAt: DateTime.now(),
-    ),
-    UserModel(
-      id: '3',
-      email: 'user@test.com',
-      password: '123456',
-      name: 'Regular User',
-      role: 'user',
-      createdAt: DateTime.now(),
-    ),
+  final List<Map<String, dynamic>> _mockUsers = [
+    // admin, helpdesk, technical_support, user
   ];
 
-  // Login: Validasi email + password
   Future<Map<String, dynamic>> login(String email, String password) async {
-    await Future.delayed(Duration(milliseconds: 500)); // Simulasi API
-    
-    final user = _users.firstWhereOrNull((u) => u.email == email);
-    
+    final user = _mockUsers.firstWhereOrNull(
+      (u) => u['email'] == email && u['password'] == password,
+    );
+
     if (user == null) {
       return {'success': false, 'message': 'Email atau password salah'};
     }
-    
-    if (user.password != password) {
-      return {'success': false, 'message': 'Email atau password salah'};
-    }
-    
-    // Simpan token & user info di GetStorage
-    await _storage.write('token', 'mock_token_\');
-    await _storage.write('user', jsonEncode(user));
-    
-    return {'success': true, 'message': 'Login berhasil', 'user': user};
+
+    final userModel = UserModel.fromJson(user);
+    currentUser.value = userModel;
+    _box.write('user', userModel.toJson());
+    _box.write('token', 'mock_token_' + userModel.id);
+
+    return {'success': true, 'user': userModel};
   }
 
-  // Register: Validasi input + create user baru
-  Future<Map<String, dynamic>> register(String email, String password, String passwordConfirm) async {
-    await Future.delayed(Duration(milliseconds: 500));
-    
-    // Validation
-    if (email.isEmpty || password.isEmpty) {
-      return {'success': false, 'message': 'Email dan password harus diisi'};
-    }
-    
-    if (password != passwordConfirm) {
-      return {'success': false, 'message': 'Password tidak cocok'};
-    }
-    
-    // Check duplicate email
-    if (_users.any((u) => u.email == email)) {
-      return {'success': false, 'message': 'Email sudah terdaftar'};
-    }
-    
-    // Create new user dengan role 'user'
-    final newUser = UserModel(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      email: email,
-      password: password,
-      name: email.split('@')[0],
-      role: 'user',
-      createdAt: DateTime.now(),
-    );
-    
-    _users.add(newUser);
-    
-    return {'success': true, 'message': 'Registrasi berhasil. Silakan login.'};
+  Future<Map<String, dynamic>> register(
+    String name,
+    String email,
+    String password,
+  ) async {
+    // cek duplicate email lalu tambah user role='user'
   }
 
-  // Get current user
-  UserModel? getCurrentUser() {
-    final userJson = _storage.read('user');
-    if (userJson == null) return null;
-    return UserModel.fromJson(jsonDecode(userJson));
+  Future<Map<String, dynamic>> resetPassword(
+    String email,
+    String newPassword,
+  ) async {
+    // cari user berdasarkan email, update password, return status
   }
 
-  // Logout
+  Future<Map<String, dynamic>> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    // validasi password lama user aktif lalu update password baru
+  }
+
   Future<void> logout() async {
-    await _storage.remove('token');
-    await _storage.remove('user');
-  }
-
-  // Check if logged in
-  bool isLoggedIn() {
-    return _storage.read('token') != null;
+    currentUser.value = null;
+    _box.remove('user');
+    _box.remove('token');
   }
 }
-`
+```
 
 **Penjelasan:**
-- Singleton pattern untuk ensure hanya 1 instance service
-- Mock users pre-loaded untuk testing (6 test accounts)
-- Login: Validate email + password, save token & user info
-- Register: Validate input, check duplicate, create user as 'user' role
-- GetStorage untuk persistence (simple local storage)
-
+- AuthService menyimpan session login di `currentUser` (Rx) dan local storage (GetStorage).
+- Login memvalidasi kombinasi email-password, menyimpan token mock, lalu menulis user aktif.
+- Register menambah user baru ke daftar mock dengan role default `user`.
+- Reset password tersedia dari halaman login melalui aksi **Lupa Password**.
+- Change password tersedia di halaman profile dengan validasi password lama.
+- Service juga menyediakan helper role (`adminIds`, `helpdeskIds`, `technicalSupportIds`) untuk validasi assign dan notifikasi.
 ### 4.2 Dashboard Metrics & Role-Based Analytics
 
-#### 4.2.1 Dashboard Controller
+#### 4.2.1 Dashboard Provider
 
-`dart
-class DashboardController extends GetxController {
-  final _ticketService = TicketService();
-  final _authService = AuthService();
+```dart
+class DashboardProvider extends ChangeNotifier {
+  final Map<String, int> stats = {};
+  final Map<String, int> roleMetrics = {};
+  bool isLoading = false;
 
-  var totalTickets = 0.obs;
-  var ongoingTickets = 0.obs;
-  var completedTickets = 0.obs;
-  
-  // Role-specific metrics
-  var roleMetrics = <String, int>{}.obs;
-  
-  @override
-  void onInit() {
-    super.onInit();
-    loadStatistics();
-  }
+  Future<void> loadStatistics() async {
+    isLoading = true;
+    notifyListeners();
 
-  void loadStatistics() {
-    final user = _authService.getCurrentUser();
-    if (user == null) return;
+    // Hitung KPI berdasarkan role aktif dan data tiket.
+    // User mendapatkan 3 KPI, sedangkan admin/helpdesk mendapatkan 5 KPI.
 
-    final tickets = _ticketService.getTickets();
-
-    // Calculate base metrics
-    final activeTickets = tickets.where((t) => t.status != 'closed').length;
-    final unhandledTickets = tickets.where((t) => t.status == 'open').length;
-
-    // Role-specific KPI assignment
-    if (user.isUser) {
-      // User: 3 KPI mengenai tiket mereka sendiri
-      var userTickets = tickets.where((t) => t.userId == user.id).toList();
-      roleMetrics.value = {
-        'submitted': userTickets.length,
-        'ongoing': userTickets.where((t) => t.status == 'in_progress').length,
-        'finish': userTickets.where((t) => t.status == 'closed').length,
-      };
-    } else {
-      // Admin/Helpdesk: 5 KPI sistem-wide statistics
-      roleMetrics.value = {
-        'ticket_in': activeTickets,
-        'ongoing': tickets.where((t) => t.status == 'in_progress').length,
-        'unhandled': unhandledTickets,
-        'approved_finish': tickets.where((t) => t.status == 'closed').length,
-        'total_incoming': tickets.length,
-      };
-    }
+    isLoading = false;
+    notifyListeners();
   }
 }
-`
-
+```
 **Penjelasan:**
-- Dashboard metrics berbeda per role
-- User: 3 KPI fokus pada tiket mereka sendiri (submitted, ongoing, finished)
-- Admin/Helpdesk: 5 KPI fokus pada sistem (incoming, processing, unhandled, approved, total)
-- Reactive update dengan Obx widget di UI
+- Dashboard metrics berbeda per role.
+- User: 3 KPI fokus pada tiket mereka sendiri (submitted, ongoing, finished).
+- Admin/Helpdesk: 5 KPI fokus pada sistem (incoming, processing, unhandled, approved, total).
+- Update UI sekarang dikelola lewat Provider/ChangeNotifier supaya reaktif dan lebih mudah dijelaskan saat responsi.
 
 #### 4.2.2 Dashboard Screen (UI Implementation)
 
 Setiap KPI card adalah clickable dan menfilter ticket list:
 
-`dart
+```dart
 // KPI Card Widget
 InkWell(
   onTap: () => _filterByMetric(metric.key), // Navigate + filter
@@ -879,19 +789,18 @@ InkWell(
     ),
   ),
 )
-`
-
+```
 **Penjelasan:**
-- Setiap KPI card adalah InkWell (interactive)
-- Tap card → Filter ticket list berdasarkan metric
-- User dengan 3 cards: Disubmit, Diproses, Selesai
-- Admin dengan 5 cards: Masuk, Diproses, Tertunda, Selesai, Total
+- Setiap KPI card adalah InkWell (interactive).
+- Tap card akan memfilter ticket list berdasarkan metric.
+- User dengan 3 cards: Disubmit, Diproses, Selesai.
+- Admin dengan 5 cards: Masuk, Diproses, Tertunda, Selesai, Total.
 
 ### 4.3 Ticket Management System
 
 #### 4.3.1 Ticket Model
 
-`dart
+```dart
 class TicketModel {
   final String id;
   final String userId;
@@ -922,17 +831,16 @@ class TicketModel {
   // Convenience method
   bool get isOverdue => DateTime.now().difference(createdAt).inHours > 24;
 }
-`
-
+```
 **Penjelasan:**
 - Model menyimpan informasi ticket lengkap
-- Status workflow: open → in_progress → resolved → closed
+- Status workflow: open -> in_progress -> resolved -> closed
 - assignedTo nullable karena ticket bisa belum ditugaskan
 - resolvedAt untuk track waktu penyelesaian
 
 #### 4.3.2 Ticket Service (Business Logic)
 
-`dart
+```dart
 class TicketService {
   static final TicketService _instance = TicketService._internal();
   final _storage = GetStorage();
@@ -969,7 +877,7 @@ class TicketService {
     required String priority,
   }) async {
     final ticket = TicketModel(
-      id: 'TKT-\',
+      id: 'TKT-' + DateTime.now().millisecondsSinceEpoch.toString(),
       userId: userId,
       title: title,
       description: description,
@@ -1037,11 +945,10 @@ class TicketService {
     );
   }
 }
-`
-
+```
 **Penjelasan:**
 - CRUD operations: Create, Read, Update ticket
-- Status workflow enforcement: open → in_progress → resolved → closed
+- Status workflow enforcement: open -> in_progress -> resolved -> closed
 - Assign ticket: Auto-update status to 'in_progress'
 - Mock data loaded untuk testing
 
@@ -1049,7 +956,7 @@ class TicketService {
 
 #### 4.4.1 Responsive KPI Grid
 
-`dart
+```dart
 // Dashboard KPI Grid - Responsive untuk semua ukuran
 GridView.count(
   crossAxisCount: isPortrait ? 2 : 3,
@@ -1061,8 +968,7 @@ GridView.count(
     return _buildKPICard(entry.key, entry.value);
   }).toList(),
 )
-`
-
+```
 **Penjelasan:**
 - GridView.count: Responsive grid (2 columns portrait, 3 landscape)
 - childAspectRatio: 1.10 untuk square-ish cards
@@ -1071,7 +977,7 @@ GridView.count(
 
 #### 4.4.2 Text Overflow Prevention
 
-`dart
+```dart
 // Ticket ID dengan ellipsis untuk long text
 Text(
   ticket.id,
@@ -1085,16 +991,15 @@ ConstrainedBox(
   constraints: BoxConstraints(maxWidth: 118),
   child: Chip(label: Text(statusLabel)),
 )
-`
-
+```
 **Penjelasan:**
 - maxLines: 1 + ellipsis: mencegah text overflow
 - ConstrainedBox dengan maxWidth: restrict widget dari expand
-- Font size compression untuk mobile (13→12, 10→9)
+- Font size compression untuk mobile (13?12, 10?9)
 
 #### 4.4.3 Responsive Form Layout
 
-`dart
+```dart
 // Form dengan responsive padding & width
 Form(
   key: _formKey,
@@ -1116,8 +1021,7 @@ Form(
     ),
   ),
 )
-`
-
+```
 **Penjelasan:**
 - SingleChildScrollView: Handle keyboard appearance
 - MediaQuery: Dynamic padding based on screen width
@@ -1128,81 +1032,71 @@ Form(
 
 #### 4.5.1 Permission Check Implementation
 
-`dart
-class TicketController extends GetxController {
-  final _authService = AuthService();
-  final _ticketService = TicketService();
+```dart
+class TicketProvider extends ChangeNotifier {
+  Future<void> assignTicket(String ticketId, String assignedTo, String assignedToName) async {
+    final actor = _authService.currentUser.value;
+    if (actor == null) return;
 
-  Future<void> assignTicketToMe(String ticketId) async {
-    final user = _authService.getCurrentUser();
-    if (user == null) return;
+    final isAdmin = actor.isAdmin;
+    final isHelpdesk = actor.role == 'helpdesk';
 
-    // Check permission: hanya helpdesk & admin yang bisa assign
-    if (!user.isHelpdesk && !user.isAdmin) {
+    if (!isAdmin && !isHelpdesk) {
       Get.snackbar('Akses Ditolak', 'Hanya helpdesk/admin yang bisa assign tiket');
       return;
     }
 
-    await _ticketService.assignTicket(ticketId, user.email);
-    Get.snackbar('Sukses', 'Tiket berhasil di-assign');
-  }
-
-  Future<void> closeTicket(String ticketId) async {
-    final user = _authService.getCurrentUser();
-    if (user == null) return;
-
-    // Check permission: hanya admin yang bisa close
-    if (!user.isAdmin) {
-      Get.snackbar('Akses Ditolak', 'Hanya admin yang bisa menutup tiket');
+    if (!_authService.isTechnicalSupportId(assignedTo)) {
+      Get.snackbar('Akses Ditolak', 'Tiket hanya boleh di-assign ke Technical Support.');
       return;
     }
 
-    await _ticketService.updateTicketStatus(ticketId, 'closed');
-    Get.snackbar('Sukses', 'Tiket berhasil ditutup');
+    await _ticketRepository.assignTicket(
+      ticketId: ticketId,
+      assignedTo: assignedTo,
+      assignedToName: assignedToName,
+    );
+    notifyListeners();
+  }
+
+  Future<void> updateStatus(String ticketId, String status) async {
+    final actor = _authService.currentUser.value;
+    if (actor == null || !actor.isStaff) return;
+
+    if (actor.isTechnicalSupport && status != 'resolved') return;
+    if (actor.role == 'helpdesk' && status != 'in_progress') return;
+    if (!actor.isAdmin && status == 'closed') return;
+
+    await _ticketRepository.updateTicketStatus(ticketId, status);
+    notifyListeners();
   }
 }
-`
+```
 
 **Penjelasan:**
-- Permission check dilakukan di controller (business layer)
-- User role validated sebelum action execute
-- Admin: all operations
-- Helpdesk: assign, update status (in_progress/resolved)
-- User: create ticket, view own tickets
-
+- Validasi role dilakukan di provider sebelum memanggil repository/service.
+- Helpdesk: hanya boleh set `in_progress` dan melakukan assign.
+- Technical Support: hanya boleh set `resolved` untuk tiket yang di-assign ke dirinya.
+- Admin: memiliki hak untuk `closed` (final).
 #### 4.5.2 UI Visibility Based on Role
 
-`dart
-// Show action buttons hanya untuk authorized roles
-Obx(() {
-  final user = authService.getCurrentUser();
-  return Wrap(
-    children: [
-      // Hanya helpdesk & admin
-      if (user?.isHelpdesk == true || user?.isAdmin == true)
-        ElevatedButton.icon(
-          onPressed: () => assignTicketToMe(),
-          icon: Icon(Icons.assignment),
-          label: Text('Assign ke saya'),
-        ),
-      
-      // Hanya admin
-      if (user?.isAdmin == true)
-        ElevatedButton.icon(
-          onPressed: () => closeTicket(),
-          icon: Icon(Icons.check_circle),
-          label: Text('Tutup Tiket'),
-        ),
-    ],
-  );
-})
-`
+```dart
+final authService = context.read<AuthService>();
+final user = authService.currentUser.value;
 
+if (user?.isHelpdesk == true || user?.isAdmin == true) {
+  // Tampilkan tombol assign
+}
+
+if (user?.isAdmin == true) {
+  // Tampilkan tombol close
+}
+```
 **Penjelasan:**
-- Conditional rendering berdasarkan user.role
-- Admin: lihat semua tombol
-- Helpdesk: lihat tombol assign & update status
-- User: hanya lihat tombol add comment
+- Conditional rendering berdasarkan role aktif.
+- Admin melihat semua tombol.
+- Helpdesk melihat tombol assign dan update status.
+- User hanya melihat tombol komentar dan input tiket.
 
 ---
 
@@ -1226,6 +1120,20 @@ Obx(() {
 5. Redirect ke Login
 6. Show success message
 
+**Reset Password Process (Lupa Password):**
+1. User klik tombol **Lupa Password?** di halaman login
+2. User input email + password baru + konfirmasi password
+3. Sistem validasi email terdaftar dan format password
+4. Password akun di-update pada mock storage
+5. Sistem menampilkan notifikasi berhasil/gagal
+
+**Change Password Process (Profile):**
+1. User buka menu profile lalu pilih **Ubah Password**
+2. User input password lama + password baru + konfirmasi
+3. Sistem validasi password lama akun aktif
+4. Jika valid, password baru disimpan
+5. Sistem menampilkan notifikasi berhasil/gagal
+
 ### 5.2 Dashboard Metrics
 
 **User Dashboard (3 KPI):**
@@ -1242,24 +1150,23 @@ Obx(() {
 
 ### 5.3 Ticket Lifecycle
 
-`
+```
 New Ticket Created
-      ↓
-   [open]              ← Status awal
-      ↓
-Helpdesk assigns      → Auto status [in_progress]
-      ↓
+      ->
+   [open]              -> Status awal
+      ->
+Helpdesk assigns      -> Auto status [in_progress]
+      ->
 Work in progress
-      ↓
-Helpdesk marks        → Status [resolved]
-      ↓
+      ->
+Helpdesk marks        -> Status [resolved]
+      ->
 Admin review
-      ↓
-Admin closes          → Status [closed]
-      ↓
+      ->
+Admin closes          -> Status [closed]
+      ->
 Ticket Completed
-`
-
+```
 ### 5.4 Comments & Notes
 
 - Users dapat add comments di setiap ticket
@@ -1291,41 +1198,43 @@ Ticket Completed
 
 ### 6.2 Test Scenarios Covered
 
-**✓ Authentication:**
+**? Authentication:**
 - Login dengan valid credentials
 - Login dengan invalid credentials
 - Register user baru
 - Duplicate email prevention
+- Reset password via fitur Lupa Password
+- Change password dari menu profile (validasi password lama)
 - Session persistence
 
-**✓ Dashboard:**
+**? Dashboard:**
 - Load dashboard per role
 - KPI metrics calculation
 - Clickable KPI cards filter ticket list
 - Recent tickets preview
 
-**✓ Ticket Management:**
+**? Ticket Management:**
 - Create ticket dengan form validation
 - View ticket list dengan pagination
 - View ticket detail dengan full info
 - Update ticket status (role-based)
-- Assign ticket to self (helpdesk)
+- Assign ticket ke technical support (helpdesk/admin)
 - Add comments
 
-**✓ Mobile Responsiveness:**
+**? Mobile Responsiveness:**
 - Layout responsive pada 320px (small phone)
 - Text tidak overflow
 - StatusBadges fit dalam container
 - Forms accessible di small screens
 - Landscape orientation support
 
-**✓ Role-Based Access:**
+**? Role-Based Access:**
 - User: Hanya lihat own tickets
 - Helpdesk: Assign & update status
 - Admin: All operations + close tickets
 - Unauthorized actions: Show error message
 
-**✓ Error Handling:**
+**? Error Handling:**
 - Network error graceful handling
 - Invalid input error messages
 - Permission denial messages
@@ -1333,13 +1242,13 @@ Ticket Completed
 
 ### 6.3 Compilation & Analyzer Status
 
-**✓ Zero Compilation Errors**
+**? Zero Compilation Errors**
 - No undefined variables
 - No type mismatches
 - No import errors
 - No widget lifecycle issues
 
-**✓ Analyzer Checks**
+**? Analyzer Checks**
 - No unused imports
 - No deprecated API usage
 - No null safety warnings
@@ -1351,22 +1260,22 @@ Ticket Completed
 
 ### 7.1 Pencapaian Proyek
 
-✅ **Implemented Features:**
-1. ✓ Full authentication system (login, register)
-2. ✓ Role-based dashboard dengan 3/5 KPI metrics
-3. ✓ Ticket CRUD operations
-4. ✓ Ticket assignment workflow
-5. ✓ Status tracking dengan timeline
-6. ✓ Comments/notes system
-7. ✓ Role-based access control
-8. ✓ Mobile responsive design (320px+)
-9. ✓ Zero compilation errors
-10. ✓ Complete documentation & wireframes
+? **Implemented Features:**
+1. ? Full authentication system (login, register, reset password, change password)
+2. ? Role-based dashboard dengan 3/5 KPI metrics
+3. ? Ticket CRUD operations
+4. ? Ticket assignment workflow
+5. ? Status tracking dengan timeline
+6. ? Comments/notes system
+7. ? Role-based access control
+8. ? Mobile responsive design (320px+)
+9. ? Zero compilation errors
+10. ? Complete documentation & wireframes
 
 ### 7.2 Technical Highlights
 
-- **Architecture:** Clean separation of concerns (Presentation, Business Logic, Data layers)
-- **State Management:** GetX untuk reactive updates & dependency injection
+- **Architecture:** Feature-based layered architecture dengan separation of concerns yang jelas (Presentation, Provider/Business Logic, Data layers)
+- **State Management:** Provider/ChangeNotifier untuk state UI utama, sementara GetX tetap dipakai untuk routing, service locator, dan beberapa helper UI
 - **Mobile First:** Designed optimized untuk small screens (320px minimum)
 - **Responsive:** ConstrainedBox, ellipsis, dynamic padding/font scaling
 - **Permission System:** Backend enforcement di setiap action
@@ -1382,7 +1291,7 @@ Ticket Completed
 ### 7.4 Lessons Learned
 
 1. **Mobile Responsiveness:** ConstrainedBox + ellipsis lebih reliable daripada just aspect ratios
-2. **State Management:** GetX ecosystem (DI + routing + state) sangat powerful untuk Flutter
+2. **State Management:** Provider lebih mudah dijelaskan saat responsi karena alur state-nya lebih eksplisit, sementara GetX tetap membantu pada routing dan helper UI
 3. **RBAC Implementation:** Permission checks perlu di multiple layers (UI visibility + backend validation)
 4. **Mock Data:** In-memory mock services sangat berguna untuk development tanpa real backend
 5. **Error Handling:** Deferred notifications (Future.microtask) solve overlay collision issues
@@ -1406,6 +1315,7 @@ Ticket Completed
 
 - **Flutter Official Docs:** https://flutter.dev
 - **Dart Language:** https://dart.dev
+- **Provider Package:** https://pub.dev/packages/provider
 - **GetX Package:** https://pub.dev/packages/get
 - **Material Design 3:** https://m3.material.io
 - **GetStorage Docs:** https://pub.dev/packages/get_storage
@@ -1436,7 +1346,7 @@ Berikut adalah screenshot dari aplikasi yang sedang berjalan:
 [Screenshot 01: Splash screen dengan logo dan app name saat aplikasi dibuka]
 
 ### 9.2 Login Screen
-[Screenshot 02: Form login dengan email & password field, login button, register link]
+[Screenshot 02: Form login dengan email & password field, login button, register link, dan tombol Lupa Password]
 
 ### 9.3 Dashboard User (3 KPI)
 [Screenshot 03: Dashboard user menampilkan greeting, 3 KPI cards (Disubmit, Diproses, Selesai), recent tickets, quick actions]
@@ -1454,7 +1364,7 @@ Berikut adalah screenshot dari aplikasi yang sedang berjalan:
 [Screenshot 07: Form pembuatan tiket dengan input fields (judul, kategori, prioritas, deskripsi), attachment upload button, submit & cancel buttons]
 
 ### 9.8 Profile Screen
-[Screenshot 08: Profile screen menampilkan user avatar/info, keamanan section (change password, notification toggle), action buttons (support, logout), app version]
+[Screenshot 08: Profile screen menampilkan user avatar/info, keamanan section (ubah password aktif + notification toggle), action buttons (support, logout), app version]
 
 ### 9.9 Ticket Assignment Dialog (Optional)
 [Screenshot 09: Dialog ketika helpdesk assign ticket, showing confirmation message dan status auto-change confirmation]
@@ -1477,4 +1387,268 @@ Dokumentasi lengkap, wireframe, dan screenshot tersedia untuk referensi lebih la
 
 ---
 
+## 10. ADDENDUM IMPLEMENTASI STEP-BY-STEP (URUT FILE)
+
+Bagian ini menjelaskan urutan pengerjaan file secara bertahap agar aplikasi stabil (tidak error), dimulai dari fondasi aplikasi, lalu fitur inti, sampai notifikasi per-role real-time in-app.
+
+### 10.1 Prinsip Urutan Pengerjaan
+
+1. Fondasi dulu (bootstrap, routes, service global)
+2. Model dan repository per fitur
+3. Provider (logic + validasi role)
+4. UI page
+5. Integrasi lintas fitur (notifikasi, badge, deep-link)
+6. Validasi akhir (flutter analyze harus bersih)
+
+---
+
+### 10.2 Tahap 1 - Fondasi Aplikasi (Agar App Jalan Dulu)
+
+#### File yang dibuat/diatur paling awal
+
+1. lib/main.dart
+2. lib/core/routes/app_routes.dart
+3. lib/core/routes/app_pages.dart
+4. lib/core/theme/app_theme.dart
+
+#### Penjelasan kode
+
+1. main.dart adalah entry point, inisialisasi GetStorage, register service global, bootstrap MultiProvider, lalu menjalankan GetMaterialApp.
+2. app_routes.dart mendefinisikan konstanta route supaya navigasi konsisten dan tidak typo.
+3. app_pages.dart memetakan route ke page, sementara dependency provider disediakan dari bootstrap di main.dart.
+4. app_theme.dart menyatukan warna status/prioritas, light-dark theme, dan style komponen supaya semua halaman konsisten.
+
+---
+
+### 10.3 Tahap 2 - Service Inti (Data + Session)
+
+#### File
+
+1. lib/core/services/auth_service.dart
+2. lib/core/services/ticket_service.dart
+3. lib/core/services/notification_service.dart
+
+#### Penjelasan kode
+
+1. auth_service.dart
+   - Menyimpan data user login aktif (currentUser)
+   - Menyediakan login/register/logout
+   - Menyediakan helper role (adminIds, helpdeskIds, technicalSupportIds) untuk distribusi notifikasi berbasis role.
+2. ticket_service.dart
+   - Menjadi sumber data tiket dan komentar
+   - Menyediakan operation create ticket, add comment, assign/unassign, update status
+   - Menyimpan data ke GetStorage untuk persistence local.
+3. notification_service.dart
+   - Menyimpan notifikasi dalam RxList agar reactive
+   - Filter notifikasi per user (recipientUserId)
+   - Mark as read/all read
+   - Menjadi dasar notifikasi real-time di dalam app session.
+
+---
+
+### 10.4 Tahap 3 - Fitur Auth (Agar User Bisa Masuk Dulu)
+
+#### File
+
+1. lib/features/auth/data/repositories/auth_repository.dart
+2. lib/features/auth/presentation/providers/auth_provider.dart
+3. lib/features/auth/presentation/pages/login_page.dart
+4. lib/features/auth/presentation/pages/register_page.dart
+5. lib/features/auth/presentation/widgets/auth_widget.dart
+
+#### Penjelasan kode
+
+1. auth_repository.dart menjembatani provider ke AuthService agar lapisan data rapi.
+2. auth_provider.dart menangani validasi form, trigger login/register, dan feedback snackbar.
+3. login_page.dart menampilkan form login dan navigasi ke register.
+4. register_page.dart menampilkan form registrasi user baru.
+5. auth_widget.dart menampung komponen UI reusable untuk screen auth agar tidak duplikasi kode.
+
+---
+
+### 10.5 Tahap 4 - Splash dan Alur Masuk Awal
+
+#### File
+
+1. lib/features/splash/data/models/splash_state_model.dart
+2. lib/features/splash/data/repositories/splash_repository.dart
+3. lib/features/splash/presentation/pages/splash_page.dart
+
+#### Penjelasan kode
+
+1. Model state splash dipakai untuk keputusan awal.
+2. Repository splash membaca kondisi session.
+3. Splash page menentukan redirect: ke login atau dashboard berdasarkan status login.
+
+---
+
+### 10.6 Tahap 5 - Domain Ticket (Model + Repository)
+
+#### File
+
+1. lib/features/ticket/data/models/ticket_model.dart
+2. lib/features/ticket/data/repositories/ticket_repository.dart
+
+#### Penjelasan kode
+
+1. ticket_model.dart mendefinisikan struktur TicketModel dan CommentModel (status, prioritas, assignee, komentar, timestamp).
+2. ticket_repository.dart jadi interface data layer untuk provider ticket, memanggil TicketService agar provider tidak akses service secara langsung ke semua detail.
+
+---
+
+### 10.7 Tahap 6 - Ticket Logic (Provider) + Rule Role
+
+#### File
+
+1. lib/features/ticket/presentation/providers/ticket_provider.dart
+
+#### Penjelasan kode inti
+
+1. Memuat list tiket, detail tiket, dan komentar.
+2. Menangani pembuatan tiket, comment, assign/unassign, dan update status.
+3. Menjalankan validasi role:
+   - Helpdesk hanya in_progress
+   - Technical Support hanya resolved dan hanya untuk tiket yang di-assign ke dirinya
+   - Admin dapat close final.
+4. Mengirim event notifikasi ke NotificationService pada setiap event penting (create, comment, assign, status change).
+
+---
+
+### 10.8 Tahap 7 - Ticket UI (List, Create, Detail)
+
+#### File
+
+1. lib/features/ticket/presentation/pages/ticket_list_page.dart
+2. lib/features/ticket/presentation/pages/create_ticket_page.dart
+3. lib/features/ticket/presentation/pages/ticket_detail_page.dart
+
+#### Penjelasan kode
+
+1. ticket_list_page.dart menampilkan daftar tiket, filter status, badge status, ringkasan info tiket.
+2. create_ticket_page.dart berisi form pembuatan tiket baru.
+3. ticket_detail_page.dart berisi detail lengkap tiket, timeline status, komentar, action menu role-based (assign, set status, close).
+
+---
+
+### 10.9 Tahap 8 - Dashboard (KPI dan Entry Point Operasional)
+
+#### File
+
+1. lib/features/dashboard/data/models/dashboard_metrics_model.dart
+2. lib/features/dashboard/data/repositories/dashboard_repository.dart
+3. lib/features/dashboard/presentation/providers/dashboard_provider.dart
+4. lib/features/dashboard/presentation/pages/dashboard_page.dart
+
+#### Penjelasan kode
+
+1. Model metrics menyatukan format KPI.
+2. Repository dashboard mengambil statistik dari sumber tiket.
+3. Provider dashboard menghitung metrik sesuai role user.
+4. Dashboard page menyajikan KPI card, chart, tiket terbaru, quick actions, dan badge notifikasi unread.
+
+---
+
+### 10.10 Tahap 9 - Profile Feature
+
+#### File
+
+1. lib/features/profile/data/models/user_model.dart
+2. lib/features/profile/data/repositories/profile_repository.dart
+3. lib/features/profile/presentation/providers/profile_provider.dart
+4. lib/features/profile/presentation/pages/profile_page.dart
+
+#### Penjelasan kode
+
+1. user_model.dart menjadi model user utama lintas fitur.
+2. profile_repository.dart mengakses data profile dari service.
+3. profile_provider.dart menyiapkan state profile dan logout flow.
+4. profile_page.dart menampilkan informasi akun, menu cepat, dan indikator unread notifikasi.
+
+---
+
+### 10.11 Tahap 10 - Notification Feature (Dari Statis ke Dinamis)
+
+#### File
+
+1. lib/features/notification/data/models/notification_model.dart
+2. lib/features/notification/presentation/providers/notification_provider.dart
+3. lib/features/notification/presentation/pages/notification_page.dart
+
+#### Penjelasan kode
+
+1. notification_model.dart menyimpan informasi notifikasi termasuk recipientUserId dan ticketId.
+2. notification_provider.dart sinkronisasi data notifikasi dengan user aktif dan menghitung unread count secara reactive.
+3. notification_page.dart menampilkan notifikasi user login (bukan data hardcoded global), mark read/mark all read, dan deep-link ke detail tiket jika ada ticketId.
+
+---
+
+### 10.12 Tahap 11 - Integrasi Routing dan Bootstrap Provider Agar Tidak Error
+
+#### File kunci
+
+1. lib/core/routes/app_pages.dart
+2. lib/core/routes/app_routes.dart
+
+#### Penjelasan
+
+1. Semua page didaftarkan di app_pages.dart, sedangkan provider disiapkan terpusat di main.dart melalui MultiProvider.
+2. Route notifikasi diarahkan ke NotificationPage, dan data notifikasi dibaca dari NotificationProvider yang sudah di-bootstrap saat app start.
+3. Route ticket detail tetap aman dibuka dari notifikasi (deep-link) karena TicketProvider tersedia global dari bootstrap.
+
+---
+
+### 10.13 Tahap 12 - Validasi Akhir (Zero Error)
+
+#### Prosedur yang dilakukan
+
+1. Jalankan flutter analyze setiap selesai refactor besar.
+2. Perbaiki warning/error sampai analyzer bersih.
+3. Uji alur role:
+   - user buat tiket
+   - helpdesk set diproses dan assign
+   - technical support set selesai teknis
+   - admin close.
+4. Uji notifikasi:
+   - notifikasi per user/role
+   - unread badge realtime
+   - tap notifikasi membuka ticket detail.
+
+Hasil akhir: aplikasi berada pada kondisi No issues found saat analisis.
+
+---
+
+### 10.14 Ringkasan Urutan Super-Singkat
+
+1. Fondasi (main, routes, theme)
+2. Service (auth, ticket, notification)
+3. Auth feature
+4. Splash
+5. Ticket model/repository
+6. Ticket provider (rule role + notifikasi event)
+7. Ticket pages
+8. Dashboard feature
+9. Profile feature
+10. Notification feature dinamis
+11. Integrasi route + provider bootstrap untuk deep-link
+12. Validasi analyzer dan uji flow end-to-end
+
+---
+
 **[END OF REPORT]**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

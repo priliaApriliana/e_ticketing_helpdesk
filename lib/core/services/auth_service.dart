@@ -154,6 +154,58 @@ class AuthService extends GetxService {
     return {'success': true, 'message': 'Registrasi berhasil, silakan login'};
   }
 
+  Future<Map<String, dynamic>> resetPassword(
+    String email,
+    String newPassword,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    final index = _mockUsers.indexWhere((user) => user['email'] == email);
+    if (index == -1) {
+      return {'success': false, 'message': 'Email tidak ditemukan'};
+    }
+
+    _mockUsers[index]['password'] = newPassword;
+
+    if (currentUser.value?.email == email) {
+      final userModel = UserModel.fromJson(
+        Map<String, dynamic>.from(_mockUsers[index]),
+      );
+      currentUser.value = userModel;
+      _box.write('user', userModel.toJson());
+    }
+
+    return {
+      'success': true,
+      'message': 'Password berhasil direset, silakan login ulang',
+    };
+  }
+
+  Future<Map<String, dynamic>> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    await Future.delayed(const Duration(milliseconds: 400));
+
+    final user = currentUser.value;
+    if (user == null) {
+      return {'success': false, 'message': 'Silakan login terlebih dahulu'};
+    }
+
+    final index = _mockUsers.indexWhere((item) => item['id'] == user.id);
+    if (index == -1) {
+      return {'success': false, 'message': 'User tidak ditemukan'};
+    }
+
+    if (_mockUsers[index]['password'] != currentPassword) {
+      return {'success': false, 'message': 'Password lama tidak sesuai'};
+    }
+
+    _mockUsers[index]['password'] = newPassword;
+
+    return {'success': true, 'message': 'Password berhasil diubah'};
+  }
+
   Future<void> logout() async {
     currentUser.value = null;
     _box.remove('user');
