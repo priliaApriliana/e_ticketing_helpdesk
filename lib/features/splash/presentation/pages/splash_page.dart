@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import 'package:e_ticketing_helpdesk/core/theme/app_theme.dart';
 import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
 import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
+import '../widgets/splash_widgets.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -52,7 +52,6 @@ class _SplashScreenState extends State<SplashScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppTheme.secondaryColor,
       body: Container(
         decoration: BoxDecoration(gradient: backgroundGradient),
         child: Stack(
@@ -60,12 +59,12 @@ class _SplashScreenState extends State<SplashScreen> {
             Positioned(
               top: -60,
               right: -40,
-              child: _GlowOrb(color: Colors.white.withValues(alpha: 0.16), size: 180),
+              child: SplashGlowOrb(color: Colors.white.withValues(alpha: 0.16), size: 180),
             ),
             Positioned(
               bottom: -50,
               left: -30,
-              child: _GlowOrb(color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.06), size: 160),
+              child: SplashGlowOrb(color: Colors.black.withValues(alpha: isDark ? 0.12 : 0.06), size: 160),
             ),
             Center(
               child: Padding(
@@ -73,19 +72,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(22),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: isDark ? 0.14 : 0.18),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
-                      ),
-                      child: const Icon(
-                        Icons.support_agent_rounded,
-                        size: 72,
-                        color: Colors.white,
-                      ),
-                    ),
+                    SplashLogo(isDark: isDark),
                     const SizedBox(height: 24),
                     const Text(
                       'E-Ticketing Helpdesk',
@@ -128,25 +115,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-
-class _GlowOrb extends StatelessWidget {
-  final Color color;
-  final double size;
-
-  const _GlowOrb({required this.color, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: color,
-      ),
-    );
-  }
-}
-
-
-

@@ -23,7 +23,8 @@ class DashboardProvider extends ChangeNotifier {
       final user = _authService.currentUser.value;
       final userId = user?.isUser == true ? user?.id : null;
 
-      stats = _dashboardRepository.getStatistics(userId);
+      // Sekarang menggunakan await karena mengambil data dari API
+      stats = await _dashboardRepository.getStatistics(userId);
       final tickets = await _dashboardRepository.getTickets(userId: userId);
 
       if (user?.isUser == true) {
@@ -49,6 +50,8 @@ class DashboardProvider extends ChangeNotifier {
           'total_incoming': tickets.length,
         };
       }
+    } catch (e) {
+      print('Error loading dashboard stats: $e');
     } finally {
       isLoading = false;
       notifyListeners();

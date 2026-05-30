@@ -11,46 +11,53 @@ class NotificationProvider extends ChangeNotifier {
 
   List<NotificationModel> notifications = <NotificationModel>[];
   int unreadCount = 0;
+  bool isLoading = false;
 
   Worker? _authWorker;
   Worker? _notificationWorker;
 
   void onInit() {
-    _authWorker = ever(_authService.currentUser, (_) => _refresh());
+    _authWorker = ever(_authService.currentUser, (_) => refresh());
     _notificationWorker = ever<List<NotificationModel>>(
       _notificationService.notifications,
-      (_) => _refresh(),
+      (newList) {
+        notifications = newList;
+        unreadCount = _notificationService.getUnreadCount();
+        notifyListeners();
+      },
     );
-    _refresh();
+    refresh();
   }
 
-  void _refresh() {
-    final userId = _authService.currentUser.value?.id;
-    if (userId == null) {
+  Future<void> refresh() async {
+    final user = _authService.currentUser.value;
+    if (user == null) {
       notifications = <NotificationModel>[];
       unreadCount = 0;
       notifyListeners();
       return;
     }
 
-    notifications = _notificationService.getByUser(userId);
-    unreadCount = _notificationService.unreadCountByUser(userId);
+    isLoading = true;
+    notifyListeners();
+    
+    await _notificationService.fetchNotifications();
+    
+    notifications = _notificationService.notifications;
+    unreadCount = _notificationService.getUnreadCount();
+    
+    isLoading = false;
     notifyListeners();
   }
 
-  void markAsRead(String notificationId) {
-    final userId = _authService.currentUser.value?.id;
-    if (userId == null) return;
-    _notificationService.markAsRead(
-      userId: userId,
-      notificationId: notificationId,
-    );
+  Future<void> markAsRead(String notificationId) async {
+    await _notificationService.markAsRead(notificationId);
+    // Refresh otomatis via worker notification
   }
 
-  void markAllAsRead() {
-    final userId = _authService.currentUser.value?.id;
-    if (userId == null) return;
-    _notificationService.markAllAsRead(userId);
+  Future<void> markAllAsRead() async {
+    await _notificationService.markAllAsRead();
+    // Refresh otomatis via worker notification
   }
 
   void onClose() {

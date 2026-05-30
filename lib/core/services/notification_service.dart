@@ -1,48 +1,52 @@
+import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:e_ticketing_helpdesk/features/notification/data/models/notification_model.dart';
+import 'package:e_ticketing_helpdesk/core/constants/api_constants.dart';
 
 class NotificationService extends GetxService {
   final GetStorage _box = GetStorage();
-  static const String _notificationsKey = 'notifications_data';
-
   final RxList<NotificationModel> notifications = <NotificationModel>[].obs;
+
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${_box.read('token')}',
+      };
 
   @override
   void onInit() {
     super.onInit();
-    _load();
-  }
-
-  void _load() {
-    final stored = _box.read(_notificationsKey);
-    if (stored is List) {
-      notifications
-        ..clear()
-        ..addAll(
-          stored
-              .map((item) => NotificationModel.fromJson(Map<String, dynamic>.from(item)))
-              .toList(),
-        );
+    if (_box.hasData('user')) {
+      fetchNotifications();
     }
   }
 
-  void _save() {
-    _box.write(
-      _notificationsKey,
-      notifications.map((item) => item.toJson()).toList(),
-    );
+  Future<void> fetchNotifications() async {
+    try {
+      final userData = _box.read('user');
+      if (userData == null) return;
+      
+      final userId = userData['id'];
+      final response = await http.get(
+        Uri.parse('${ApiConstants.notifications}?user_id=$userId'),
+        headers: _headers,
+      );
+
+      if (response.statusCode == 200) {
+        List data = jsonDecode(response.body);
+        notifications.value = data
+            .map((item) => NotificationModel.fromJson(item))
+            .toList();
+      }
+    } catch (e) {
+      // Handle error
+    }
   }
 
-  List<NotificationModel> getByUser(String userId) {
-    final items = notifications.where((item) => item.recipientUserId == userId).toList();
-    items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return items;
-  }
-
-  int unreadCountByUser(String userId) {
-    return notifications.where((item) => item.recipientUserId == userId && !item.isRead).length;
+  int getUnreadCount() {
+    return notifications.where((item) => !item.isRead).length;
   }
 
   void addForUsers({
@@ -52,53 +56,58 @@ class NotificationService extends GetxService {
     String? ticketId,
     String? type,
     String? excludeUserId,
-  }) {
-    if (recipientUserIds.isEmpty) return;
-
+  }) async {
     for (final userId in recipientUserIds) {
-      if (userId.isEmpty) continue;
       if (excludeUserId != null && userId == excludeUserId) continue;
-
-      notifications.add(
-        NotificationModel(
-          id: 'N-${DateTime.now().millisecondsSinceEpoch}-$userId',
-          recipientUserId: userId,
-          title: title,
-          message: message,
-          createdAt: DateTime.now(),
-          ticketId: ticketId,
-          type: type,
-        ),
-      );
-    }
-
-    _save();
-  }
-
-  void markAsRead({required String userId, required String notificationId}) {
-    final index = notifications.indexWhere(
-      (item) => item.id == notificationId && item.recipientUserId == userId,
-    );
-    if (index == -1) return;
-
-    notifications[index] = notifications[index].copyWith(isRead: true);
-    notifications.refresh();
-    _save();
-  }
-
-  void markAllAsRead(String userId) {
-    var changed = false;
-    for (var i = 0; i < notifications.length; i++) {
-      final item = notifications[i];
-      if (item.recipientUserId == userId && !item.isRead) {
-        notifications[i] = item.copyWith(isRead: true);
-        changed = true;
+      
+      try {
+        await http.post(
+          Uri.parse(ApiConstants.notifications),
+          headers: _headers,
+          body: jsonEncode({
+            'recipient_user_id': userId,
+            'title': title,
+            'message': message,
+            'ticket_id': ticketId,
+            'type': type,
+          }),
+        );
+      } catch (e) {
+        // Handle error
       }
     }
+    fetchNotifications();
+  }
 
-    if (changed) {
-      notifications.refresh();
-      _save();
-    }
+  Future<void> markAsRead(String notificationId) async {
+    try {
+      final response = await http.put(
+        Uri.parse(ApiConstants.markNotificationRead(notificationId)),
+        headers: _headers,
+      );
+
+      if (response.statusCode == 200) {
+        final index = notifications.indexWhere((n) => n.id == notificationId);
+        if (index != -1) {
+          notifications[index] = notifications[index].copyWith(isRead: true);
+          notifications.refresh();
+        }
+      }
+    } catch (e) {}
+  }
+
+  Future<void> markAllAsRead() async {
+    try {
+      final userData = _box.read('user');
+      if (userData == null) return;
+      final userId = userData['id'];
+
+      await http.put(
+        Uri.parse('${ApiConstants.notifications}/read-all'),
+        headers: _headers,
+        body: jsonEncode({'user_id': userId}),
+      );
+      fetchNotifications();
+    } catch (e) {}
   }
 }

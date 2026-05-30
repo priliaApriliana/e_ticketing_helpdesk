@@ -1,67 +1,25 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:e_ticketing_helpdesk/features/profile/data/models/user_model.dart';
+import 'package:e_ticketing_helpdesk/core/constants/api_constants.dart';
 
 class AuthService extends GetxService {
   final _box = GetStorage();
   final Rx<UserModel?> currentUser = Rx<UserModel?>(null);
-
-  final List<Map<String, dynamic>> _mockUsers = [
-    {
-      'id': '1',
-      'name': 'Budi Admin',
-      'email': 'admin@test.com',
-      'password': '123456',
-      'role': 'admin',
-      'avatar': null,
-    },
-    {
-      'id': '2',
-      'name': 'Siti Helpdesk',
-      'email': 'helpdesk@test.com',
-      'password': '123456',
-      'role': 'helpdesk',
-      'avatar': null,
-    },
-    {
-      'id': '4',
-      'name': 'Rizky Technical Support',
-      'email': 'ts1@test.com',
-      'password': '123456',
-      'role': 'technical_support',
-      'avatar': null,
-    },
-    {
-      'id': '5',
-      'name': 'Nina Technical Support',
-      'email': 'ts2@test.com',
-      'password': '123456',
-      'role': 'technical_support',
-      'avatar': null,
-    },
-    {
-      'id': '3',
-      'name': 'Andi User',
-      'email': 'user@test.com',
-      'password': '123456',
-      'role': 'user',
-      'avatar': null,
-    },
-        {
-      'id': '6',
-      'name': 'Putri User',
-      'email': 'putri@test.com',
-      'password': '123456',
-      'role': 'user',
-      'avatar': null,
-    },
-  ];
+  
+  final RxList<UserModel> technicalSupportUsers = <UserModel>[].obs;
 
   @override
   void onInit() {
     super.onInit();
     _loadUser();
+    if (isLoggedIn) {
+      fetchTechnicalSupports();
+    }
   }
 
   void _loadUser() {
@@ -75,143 +33,113 @@ class AuthService extends GetxService {
 
   bool get isLoggedIn => currentUser.value != null;
 
-  List<UserModel> get allUsers {
-    return _mockUsers
-        .map((user) => UserModel.fromJson(Map<String, dynamic>.from(user)))
-        .toList();
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${_box.read('token')}',
+      };
+
+  // Getters yang dibutuhkan oleh TicketProvider
+  Set<String> get adminIds => {'admin-uuid-1'}; // Sesuaikan logic ID jika ada
+  Set<String> get helpdeskIds => {'helpdesk-uuid-1'};
+
+  Future<void> fetchTechnicalSupports() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/users?role=technical_support'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        List data = jsonDecode(response.body);
+        technicalSupportUsers.value = data.map((u) => UserModel.fromJson(u)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error fetchTechnicalSupports: $e');
+    }
   }
 
-  List<UserModel> get technicalSupportUsers {
-    return usersByRole('technical_support');
-  }
-
-  List<UserModel> get assignableUsers => technicalSupportUsers;
-
-  List<UserModel> usersByRole(String role) {
-    return allUsers.where((user) => user.role == role).toList();
-  }
-
-  Set<String> userIdsByRole(String role) {
-    return usersByRole(role).map((user) => user.id).toSet();
-  }
-
-  Set<String> get adminIds => userIdsByRole('admin');
-  Set<String> get helpdeskIds => userIdsByRole('helpdesk');
-  Set<String> get technicalSupportIds => userIdsByRole('technical_support');
-
-  UserModel? findUserById(String id) {
-    final user = _mockUsers.firstWhereOrNull((item) => item['id'] == id);
-    if (user == null) return null;
-    return UserModel.fromJson(Map<String, dynamic>.from(user));
-  }
-
+  // Method yang dibutuhkan oleh TicketProvider
   bool isTechnicalSupportId(String userId) {
-    return _mockUsers.any(
-      (user) => user['id'] == userId && user['role'] == 'technical_support',
-    );
+    return technicalSupportUsers.any((u) => u.id == userId);
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    final user = _mockUsers.firstWhereOrNull(
-      (u) => u['email'] == email && u['password'] == password,
-    );
-
-    if (user == null) {
-      return {'success': false, 'message': 'Email atau password salah'};
-    }
-
-    final userModel = UserModel.fromJson(user);
-    currentUser.value = userModel;
-    _box.write('user', userModel.toJson());
-    _box.write('token', 'mock_token_${user['id']}');
-
-    return {'success': true, 'user': userModel};
-  }
-
-  Future<Map<String, dynamic>> register(
-    String name,
-    String email,
-    String password,
-  ) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    final exists = _mockUsers.any((u) => u['email'] == email);
-    if (exists) {
-      return {'success': false, 'message': 'Email sudah terdaftar'};
-    }
-
-    _mockUsers.add({
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'name': name,
-      'email': email,
-      'password': password,
-      'role': 'user',
-      'avatar': null,
-    });
-
-    return {'success': true, 'message': 'Registrasi berhasil, silakan login'};
-  }
-
-  Future<Map<String, dynamic>> resetPassword(
-    String email,
-    String newPassword,
-  ) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    final index = _mockUsers.indexWhere((user) => user['email'] == email);
-    if (index == -1) {
-      return {'success': false, 'message': 'Email tidak ditemukan'};
-    }
-
-    _mockUsers[index]['password'] = newPassword;
-
-    if (currentUser.value?.email == email) {
-      final userModel = UserModel.fromJson(
-        Map<String, dynamic>.from(_mockUsers[index]),
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.login),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password}),
       );
-      currentUser.value = userModel;
-      _box.write('user', userModel.toJson());
-    }
 
-    return {
-      'success': true,
-      'message': 'Password berhasil direset, silakan login ulang',
-    };
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        final userModel = UserModel.fromJson(data['user']);
+        currentUser.value = userModel;
+        _box.write('user', userModel.toJson());
+        _box.write('token', data['token']);
+        
+        await fetchTechnicalSupports();
+        
+        return {'success': true, 'user': userModel};
+      } else {
+        return {'success': false, 'message': data['message'] ?? 'Login gagal'};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server'};
+    }
   }
 
-  Future<Map<String, dynamic>> changePassword(
-    String currentPassword,
-    String newPassword,
-  ) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-
-    final user = currentUser.value;
-    if (user == null) {
-      return {'success': false, 'message': 'Silakan login terlebih dahulu'};
+  Future<Map<String, dynamic>> register(String name, String email, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse(ApiConstants.register),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'name': name, 'email': email, 'password': password}),
+      );
+      final data = jsonDecode(response.body);
+      return {'success': (response.statusCode == 201 || response.statusCode == 200), 'message': data['message']};
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server'};
     }
+  }
 
-    final index = _mockUsers.indexWhere((item) => item['id'] == user.id);
-    if (index == -1) {
-      return {'success': false, 'message': 'User tidak ditemukan'};
+  // Method resetPassword yang dibutuhkan AuthRepository
+  Future<Map<String, dynamic>> resetPassword(String email, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/auth/reset-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'new_password': newPassword}),
+      );
+      final data = jsonDecode(response.body);
+      return {'success': response.statusCode == 200, 'message': data['message']};
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server'};
     }
+  }
 
-    if (_mockUsers[index]['password'] != currentPassword) {
-      return {'success': false, 'message': 'Password lama tidak sesuai'};
+  // Method changePassword yang dibutuhkan ProfileRepository
+  Future<Map<String, dynamic>> changePassword(String oldPassword, String newPassword) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConstants.baseUrl}/auth/change-password'),
+        headers: _headers,
+        body: jsonEncode({
+          'old_password': oldPassword,
+          'new_password': newPassword,
+        }),
+      );
+      final data = jsonDecode(response.body);
+      return {'success': response.statusCode == 200, 'message': data['message']};
+    } catch (e) {
+      return {'success': false, 'message': 'Gagal terhubung ke server'};
     }
-
-    _mockUsers[index]['password'] = newPassword;
-
-    return {'success': true, 'message': 'Password berhasil diubah'};
   }
 
   Future<void> logout() async {
     currentUser.value = null;
+    technicalSupportUsers.clear();
     _box.remove('user');
     _box.remove('token');
   }
 }
-
-
-

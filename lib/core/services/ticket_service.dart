@@ -1,169 +1,73 @@
+import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_model.dart';
+import 'package:e_ticketing_helpdesk/core/constants/api_constants.dart';
 
 class TicketService extends GetxService {
   final GetStorage _box = GetStorage();
-  static const String _ticketsKey = 'tickets_data';
-  static const String _commentsKey = 'ticket_comments_data';
 
-  final List<TicketModel> _tickets = [
-    TicketModel(
-      id: 'TKT-001',
-      title: 'Komputer tidak bisa menyala',
-      description:
-          'Komputer di ruang lab 3 tidak bisa dinyalakan sejak pagi. Sudah dicoba ganti kabel power tapi tetap tidak bisa.',
-      status: 'open',
-      priority: 'high',
-      category: 'Hardware',
-      createdBy: '3',
-      createdByName: 'Andi User',
-      attachments: [],
-      createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-      updatedAt: DateTime.now().subtract(const Duration(hours: 5)),
-      commentCount: 2,
-    ),
-    TicketModel(
-      id: 'TKT-002',
-      title: 'Tidak bisa akses WiFi kampus',
-      description:
-          'Tidak dapat terkoneksi ke WiFi kampus sejak kemarin sore. Perangkat lain juga mengalami masalah yang sama.',
-      status: 'in_progress',
-      priority: 'medium',
-      category: 'Network',
-      createdBy: '3',
-      createdByName: 'Andi User',
-      assignedTo: '4',
-      assignedToName: 'Rizky Technical Support',
-      attachments: [],
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      updatedAt: DateTime.now().subtract(const Duration(hours: 2)),
-      commentCount: 4,
-    ),
-    TicketModel(
-      id: 'TKT-003',
-      title: 'Software akuntansi error',
-      description:
-          'Aplikasi akuntansi menampilkan error saat login dengan kode ERR_DB_CONN. Sudah dicoba restart tapi tidak membantu.',
-      status: 'closed',
-      priority: 'high',
-      category: 'Software',
-      createdBy: '3',
-      createdByName: 'Andi User',
-      assignedTo: '5',
-      assignedToName: 'Nina Technical Support',
-      attachments: [],
-      createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      commentCount: 6,
-    ),
-    TicketModel(
-      id: 'TKT-004',
-      title: 'Printer tidak terdeteksi',
-      description:
-          'Printer di ruang TU tidak terdeteksi oleh komputer setelah update Windows terbaru.',
-      status: 'open',
-      priority: 'low',
-      category: 'Hardware',
-      createdBy: '3',
-      createdByName: 'Andi User',
-      attachments: [],
-      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-      updatedAt: DateTime.now().subtract(const Duration(hours: 1)),
-      commentCount: 0,
-    ),
-  ];
-
-  final Map<String, List<CommentModel>> _comments = {
-    'TKT-001': [
-      CommentModel(
-        id: 'c1',
-        ticketId: 'TKT-001',
-        userId: '2',
-        userName: 'Siti Helpdesk',
-        userRole: 'helpdesk',
-        content: 'Terima kasih laporan Anda. Teknisi akan segera dikirim.',
-        createdAt: DateTime.now().subtract(const Duration(hours: 4)),
-      ),
-      CommentModel(
-        id: 'c2',
-        ticketId: 'TKT-001',
-        userId: '3',
-        userName: 'Andi User',
-        userRole: 'user',
-        content: 'Baik, ditunggu ya. Terima kasih.',
-        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-      ),
-    ],
-  };
-
-  @override
-  void onInit() {
-    super.onInit();
-    _loadPersistedData();
-  }
-
-  void _loadPersistedData() {
-    final storedTickets = _box.read(_ticketsKey);
-    final storedComments = _box.read(_commentsKey);
-
-    if (storedTickets is List && storedTickets.isNotEmpty) {
-      _tickets
-        ..clear()
-        ..addAll(
-          storedTickets.map(
-            (item) => TicketModel.fromJson(Map<String, dynamic>.from(item)),
-          ),
-        );
-    }
-
-    if (storedComments is Map && storedComments.isNotEmpty) {
-      _comments.clear();
-      storedComments.forEach((key, value) {
-        if (value is List) {
-          _comments[key.toString()] = value
-              .map(
-                (item) =>
-                    CommentModel.fromJson(Map<String, dynamic>.from(item)),
-              )
-              .toList();
-        }
-      });
-    }
-
-    _savePersistedData();
-  }
-
-  void _savePersistedData() {
-    _box.write(_ticketsKey, _tickets.map((ticket) => ticket.toJson()).toList());
-    final encodedComments = <String, dynamic>{};
-    _comments.forEach((ticketId, values) {
-      encodedComments[ticketId] = values
-          .map((comment) => comment.toJson())
-          .toList();
-    });
-    _box.write(_commentsKey, encodedComments);
-  }
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${_box.read('token')}',
+      };
 
   Future<List<TicketModel>> getTickets({String? userId, String? status}) async {
-    var tickets = List<TicketModel>.from(_tickets);
-    if (userId != null) {
-      tickets = tickets.where((ticket) => ticket.createdBy == userId).toList();
+    try {
+      String url = ApiConstants.tickets;
+      Map<String, String> queryParams = {};
+      if (userId != null) queryParams['user_id'] = userId;
+      if (status != null) queryParams['status'] = status;
+
+      if (queryParams.isNotEmpty) {
+        url += '?' + Uri(queryParameters: queryParams).query;
+      }
+
+      final response = await http.get(Uri.parse(url), headers: _headers);
+
+      if (response.statusCode == 200) {
+        List data = jsonDecode(response.body);
+        return data.map((item) => TicketModel.fromJson(item)).toList();
+      }
+    } catch (e) {
+      print('Error getting tickets: $e');
     }
-    if (status != null) {
-      tickets = tickets.where((ticket) => ticket.status == status).toList();
-    }
-    tickets.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return tickets;
+    return [];
   }
 
   Future<TicketModel?> getTicketById(String id) async {
-    return _tickets.firstWhereOrNull((ticket) => ticket.id == id);
+    try {
+      final response = await http.get(
+        Uri.parse(ApiConstants.ticketDetail(id)),
+        headers: _headers,
+      );
+
+      if (response.statusCode == 200) {
+        return TicketModel.fromJson(jsonDecode(response.body));
+      }
+    } catch (e) {
+      print('Error getting ticket detail: $e');
+    }
+    return null;
   }
 
   Future<List<CommentModel>> getComments(String ticketId) async {
-    return _comments[ticketId] ?? [];
+    try {
+      final response = await http.get(
+        Uri.parse(ApiConstants.ticketComments(ticketId)),
+        headers: _headers,
+      );
+
+      if (response.statusCode == 200) {
+        List data = jsonDecode(response.body);
+        return data.map((item) => CommentModel.fromJson(item)).toList();
+      }
+    } catch (e) {
+      print('Error getting comments: $e');
+    }
+    return [];
   }
 
   Future<TicketModel> createTicket({
@@ -175,22 +79,24 @@ class TicketService extends GetxService {
     required String createdByName,
     List<String> attachments = const [],
   }) async {
-    final ticket = TicketModel(
-      id: 'LOCAL-${DateTime.now().millisecondsSinceEpoch}',
-      title: title,
-      description: description,
-      status: 'open',
-      priority: priority,
-      category: category,
-      createdBy: createdBy,
-      createdByName: createdByName,
-      attachments: attachments,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
+    final response = await http.post(
+      Uri.parse(ApiConstants.tickets),
+      headers: _headers,
+      body: jsonEncode({
+        'title': title,
+        'description': description,
+        'priority': priority,
+        'category': category,
+        'created_by': createdBy,
+        'attachments': attachments,
+      }),
     );
-    _tickets.insert(0, ticket);
-    _savePersistedData();
-    return ticket;
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return TicketModel.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Gagal membuat tiket: ${response.body}');
+    }
   }
 
   Future<CommentModel> addComment({
@@ -200,40 +106,20 @@ class TicketService extends GetxService {
     required String userRole,
     required String content,
   }) async {
-    final comment = CommentModel(
-      id: 'LOCAL-C-${DateTime.now().millisecondsSinceEpoch}',
-      ticketId: ticketId,
-      userId: userId,
-      userName: userName,
-      userRole: userRole,
-      content: content,
-      createdAt: DateTime.now(),
+    final response = await http.post(
+      Uri.parse(ApiConstants.ticketComments(ticketId)),
+      headers: _headers,
+      body: jsonEncode({
+        'user_id': userId,
+        'content': content,
+      }),
     );
-    _comments[ticketId] = [...(_comments[ticketId] ?? []), comment];
-    final ticket = _tickets.firstWhereOrNull((item) => item.id == ticketId);
-    if (ticket != null) {
-      final index = _tickets.indexWhere((t) => t.id == ticketId);
-      if (index != -1) {
-        _tickets[index] = TicketModel(
-          id: ticket.id,
-          title: ticket.title,
-          description: ticket.description,
-          status: ticket.status,
-          priority: ticket.priority,
-          category: ticket.category,
-          createdBy: ticket.createdBy,
-          createdByName: ticket.createdByName,
-          assignedTo: ticket.assignedTo,
-          assignedToName: ticket.assignedToName,
-          attachments: ticket.attachments,
-          createdAt: ticket.createdAt,
-          updatedAt: DateTime.now(),
-          commentCount: _comments[ticketId]!.length,
-        );
-      }
+
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      return CommentModel.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Gagal menambah komentar: ${response.body}');
     }
-    _savePersistedData();
-    return comment;
   }
 
   Future<bool> assignTicket({
@@ -241,53 +127,24 @@ class TicketService extends GetxService {
     required String assignedTo,
     required String assignedToName,
   }) async {
-    final index = _tickets.indexWhere((ticket) => ticket.id == ticketId);
-    if (index == -1) return false;
-
-    final old = _tickets[index];
-    _tickets[index] = TicketModel(
-      id: old.id,
-      title: old.title,
-      description: old.description,
-      status: 'in_progress',
-      priority: old.priority,
-      category: old.category,
-      createdBy: old.createdBy,
-      createdByName: old.createdByName,
-      assignedTo: assignedTo,
-      assignedToName: assignedToName,
-      attachments: old.attachments,
-      createdAt: old.createdAt,
-      updatedAt: DateTime.now(),
-      commentCount: old.commentCount,
+    return updateTicketStatus(
+      ticketId, 
+      'in_progress', 
+      assignedTo: assignedTo, 
+      assignedToName: assignedToName
     );
-    _savePersistedData();
-    return true;
   }
 
   Future<bool> unassignTicket(String ticketId) async {
-    final index = _tickets.indexWhere((ticket) => ticket.id == ticketId);
-    if (index == -1) return false;
-
-    final old = _tickets[index];
-    _tickets[index] = TicketModel(
-      id: old.id,
-      title: old.title,
-      description: old.description,
-      status: 'open',
-      priority: old.priority,
-      category: old.category,
-      createdBy: old.createdBy,
-      createdByName: old.createdByName,
-      assignedTo: null,
-      assignedToName: null,
-      attachments: old.attachments,
-      createdAt: old.createdAt,
-      updatedAt: DateTime.now(),
-      commentCount: old.commentCount,
-    );
-    _savePersistedData();
-    return true;
+    try {
+      final response = await http.put(
+        Uri.parse(ApiConstants.ticketDetail(ticketId) + '/unassign'),
+        headers: _headers,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> updateTicketStatus(
@@ -296,43 +153,39 @@ class TicketService extends GetxService {
     String? assignedTo,
     String? assignedToName,
   }) async {
-    final index = _tickets.indexWhere((ticket) => ticket.id == ticketId);
-    if (index == -1) return false;
+    try {
+      final response = await http.put(
+        Uri.parse(ApiConstants.ticketDetail(ticketId) + '/status'),
+        headers: _headers,
+        body: jsonEncode({
+          'status': status,
+          'assigned_to': assignedTo,
+          'assigned_to_name': assignedToName,
+        }),
+      );
 
-    final old = _tickets[index];
-    _tickets[index] = TicketModel(
-      id: old.id,
-      title: old.title,
-      description: old.description,
-      status: status,
-      priority: old.priority,
-      category: old.category,
-      createdBy: old.createdBy,
-      createdByName: old.createdByName,
-      assignedTo: assignedTo ?? old.assignedTo,
-      assignedToName: assignedToName ?? old.assignedToName,
-      attachments: old.attachments,
-      createdAt: old.createdAt,
-      updatedAt: DateTime.now(),
-      commentCount: old.commentCount,
-    );
-    _savePersistedData();
-    return true;
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error updating status: $e');
+      return false;
+    }
   }
 
-  Map<String, int> getStatistics(String? userId) {
-    final tickets = userId != null
-        ? _tickets.where((ticket) => ticket.createdBy == userId).toList()
-        : _tickets;
+  Future<Map<String, int>> getStatistics(String? userId) async {
+    try {
+      String url = '${ApiConstants.baseUrl}/dashboard/metrics';
+      if (userId != null) url += '?user_id=$userId';
+
+      final response = await http.get(Uri.parse(url), headers: _headers);
+
+      if (response.statusCode == 200) {
+        return Map<String, int>.from(jsonDecode(response.body));
+      }
+    } catch (e) {
+      print('Error getting statistics: $e');
+    }
     return {
-      'total': tickets.length,
-      'open': tickets.where((ticket) => ticket.status == 'open').length,
-      'in_progress': tickets
-          .where((ticket) => ticket.status == 'in_progress')
-          .length,
-      'resolved': tickets.where((ticket) => ticket.status == 'resolved').length,
-      'closed': tickets.where((ticket) => ticket.status == 'closed').length,
+      'total': 0, 'open': 0, 'in_progress': 0, 'resolved': 0, 'closed': 0,
     };
   }
 }
-

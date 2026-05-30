@@ -85,12 +85,12 @@ class LoginScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               SizedBox(height: topSpacing),
-                              AuthHeroSection(
+                              const AuthHeroSection(
                                 title: 'Selamat Datang!',
                                 subtitle:
                                     'Login ke akun Anda untuk melanjutkan',
                                 icon: Icons.support_agent_rounded,
-                                chips: const [
+                                chips: [
                                   'Akses cepat',
                                   'Status tiket',
                                   'Riwayat rapi',
@@ -345,21 +345,21 @@ class LoginScreen extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(height: 10),
-                                    _DemoAccountTile(
+                                    DemoAccountTile(
                                       role: 'Admin',
                                       email: 'admin@test.com',
                                       ctrl: ctrl,
                                       textColor: titleColor,
                                       mutedColor: mutedColor,
                                     ),
-                                    _DemoAccountTile(
+                                    DemoAccountTile(
                                       role: 'Helpdesk',
                                       email: 'helpdesk@test.com',
                                       ctrl: ctrl,
                                       textColor: titleColor,
                                       mutedColor: mutedColor,
                                     ),
-                                    _DemoAccountTile(
+                                    DemoAccountTile(
                                       role: 'User',
                                       email: 'user@test.com',
                                       ctrl: ctrl,
@@ -384,86 +384,3 @@ class LoginScreen extends StatelessWidget {
     );
   }
 }
-
-class _DemoAccountTile extends StatelessWidget {
-  final String role;
-  final String email;
-  final AuthProvider ctrl;
-  final Color textColor;
-  final Color mutedColor;
-
-  const _DemoAccountTile({
-    required this.role,
-    required this.email,
-    required this.ctrl,
-    required this.textColor,
-    required this.mutedColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final roleIcon = switch (role) {
-      'Admin' => Icons.admin_panel_settings_outlined,
-      'Helpdesk' => Icons.support_agent_outlined,
-      _ => Icons.person_outline,
-    };
-
-    return InkWell(
-      onTap: () {
-        ctrl.emailCtrl.text = email;
-        ctrl.passwordCtrl.text = '123456';
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: Colors.white.withValues(alpha: 0.68),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: const Color(0xFF7C3AED).withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(roleIcon, size: 18, color: const Color(0xFF5B21B6)),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    role,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    email,
-                    style: TextStyle(fontSize: 12, color: mutedColor),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: mutedColor),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-
-
-

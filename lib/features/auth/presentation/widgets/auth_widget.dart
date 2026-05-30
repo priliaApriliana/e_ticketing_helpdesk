@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../providers/auth_provider.dart';
 
 class AuthGlowOrb extends StatelessWidget {
   final Color color;
@@ -129,6 +130,123 @@ class AuthSectionTitle extends StatelessWidget {
         const SizedBox(height: 4),
         Text(subtitle, style: TextStyle(color: mutedColor)),
       ],
+    );
+  }
+}
+
+class DemoAccountTile extends StatelessWidget {
+  final String role;
+  final String email;
+  final AuthProvider ctrl;
+  final Color textColor;
+  final Color mutedColor;
+
+  const DemoAccountTile({
+    super.key,
+    required this.role,
+    required this.email,
+    required this.ctrl,
+    required this.textColor,
+    required this.mutedColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final roleIcon = switch (role) {
+      'Admin' => Icons.admin_panel_settings_outlined,
+      'Helpdesk' => Icons.support_agent_outlined,
+      _ => Icons.person_outline,
+    };
+
+    return InkWell(
+      onTap: () {
+        ctrl.emailCtrl.text = email;
+        ctrl.passwordCtrl.text = '123456';
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          color: Colors.white.withValues(alpha: 0.68),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(roleIcon, size: 18, color: const Color(0xFF5B21B6)),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    role,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    email,
+                    style: TextStyle(fontSize: 12, color: mutedColor),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: mutedColor),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RegisterBulletLine extends StatelessWidget {
+  final String text;
+
+  const RegisterBulletLine({super.key, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 6),
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              color: Color(0xFF7C3AED),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFFCBD5E1)
+                    : const Color(0xFF475569),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

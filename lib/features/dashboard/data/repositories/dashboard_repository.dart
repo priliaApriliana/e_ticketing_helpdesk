@@ -6,7 +6,7 @@ import 'package:e_ticketing_helpdesk/core/services/ticket_service.dart';
 class DashboardRepository {
   final TicketService _ticketService = Get.find<TicketService>();
 
-  Map<String, int> getStatistics(String? userId) {
+  Future<Map<String, int>> getStatistics(String? userId) {
     return _ticketService.getStatistics(userId);
   }
 
@@ -14,7 +14,3 @@ class DashboardRepository {
     return _ticketService.getTickets(userId: userId);
   }
 }
-
-
-
-
