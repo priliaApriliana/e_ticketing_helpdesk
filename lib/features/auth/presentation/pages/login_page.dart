@@ -136,7 +136,7 @@ class LoginScreen extends StatelessWidget {
                                           prefixIcon: Icon(
                                             Icons.email_outlined,
                                           ),
-                                          hintText: 'contoh@email.com',
+                                          hintText: 'contoh@gmail.com',
                                         ),
                                         validator: (v) {
                                           if (v == null || v.isEmpty) {
@@ -347,21 +347,28 @@ class LoginScreen extends StatelessWidget {
                                     const SizedBox(height: 10),
                                     DemoAccountTile(
                                       role: 'Admin',
-                                      email: 'admin@test.com',
+                                      email: 'admin@gmail.com',
                                       ctrl: ctrl,
                                       textColor: titleColor,
                                       mutedColor: mutedColor,
                                     ),
                                     DemoAccountTile(
                                       role: 'Helpdesk',
-                                      email: 'helpdesk@test.com',
+                                      email: 'helpdesk@gmail.com',
+                                      ctrl: ctrl,
+                                      textColor: titleColor,
+                                      mutedColor: mutedColor,
+                                    ),
+                                    DemoAccountTile(
+                                      role: 'Technical Support', 
+                                      email: 'ts1@gmail.com',
                                       ctrl: ctrl,
                                       textColor: titleColor,
                                       mutedColor: mutedColor,
                                     ),
                                     DemoAccountTile(
                                       role: 'User',
-                                      email: 'user@test.com',
+                                      email: 'test@gmail.com',
                                       ctrl: ctrl,
                                       textColor: titleColor,
                                       mutedColor: mutedColor,

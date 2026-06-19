@@ -2,7 +2,7 @@ class UserModel {
   final String id;
   final String name;
   final String email;
-  final String role; // 'user', 'helpdesk', 'technical_support', 'admin'
+  final String role;
   final String? avatar;
 
   UserModel({
@@ -13,26 +13,35 @@ class UserModel {
     this.avatar,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-    id: json['id'],
-    name: json['name'],
-    email: json['email'],
-    role: json['role'],
-    avatar: json['avatar'],
-  );
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      role: json['role'] ?? 'user',
+      avatar: json['avatar'],
+    );
+  }
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'email': email,
-    'role': role,
-    'avatar': avatar,
-  };
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'role': role,
+      'avatar': avatar,
+    };
+  }
 
+  // Getters untuk mempermudah pengecekan Role di UI
   bool get isAdmin => role == 'admin';
-  bool get isHelpdesk => role == 'helpdesk' || role == 'admin';
+  bool get isHelpdesk => role == 'helpdesk';
   bool get isTechnicalSupport => role == 'technical_support';
-  bool get isStaff =>
-      role == 'helpdesk' || role == 'admin' || role == 'technical_support';
   bool get isUser => role == 'user';
+
+  // Staff adalah Admin, Helpdesk, atau Technical Support
+  bool get isStaff => isAdmin || isHelpdesk || isTechnicalSupport;
+  
+  // Role yang berhak melakukan "Assign" (Menugaskan Teknisi)
+  bool get canAssign => isAdmin || isHelpdesk;
 }

@@ -63,10 +63,32 @@ router.post('/reset-password', async (req, res) => {
 
 // Change Password
 router.post('/change-password', async (req, res) => {
-  const { old_password, new_password } = req.body;
-  // Note: Dalam real app, ambil user_id dari JWT middleware
-  // Untuk demo, kita asumsikan middleware sudah ada atau kirim email di body
-  res.json({ message: 'Fitur ganti password berhasil diakses' });
+  const { user_id, old_password, new_password } = req.body;
+  try {
+    // Cari user berdasarkan user_id
+    const result = await db.query('SELECT * FROM users WHERE id = $1', [user_id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User tidak ditemukan' });
+    }
+
+    const user = result.rows[0];
+
+    // Cek apakah old_password sesuai
+    const isMatch = await bcrypt.compare(old_password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Password lama tidak sesuai' });
+    }
+
+    // Hash password baru
+    const hashedPassword = await bcrypt.hash(new_password, 10);
+
+    // Update password di database
+    await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user_id]);
+
+    res.json({ message: 'Password berhasil diubah' });
+  } catch (err) {
+    res.status(500).json({ message: 'Terjadi kesalahan server' });
+  }
 });
 
 module.exports = router;

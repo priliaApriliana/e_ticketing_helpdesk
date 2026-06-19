@@ -39,6 +39,23 @@ class CreateTicketBackdrop extends StatelessWidget {
               ),
             ),
           ),
+          Positioned(
+            bottom: -60,
+            left: -40,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF2563EB).withValues(alpha: 0.15),
+                    const Color(0xFF7C3AED).withValues(alpha: 0.02),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -69,11 +86,11 @@ class CreateTicketTopBar extends StatelessWidget {
           child: IconButton(
             padding: EdgeInsets.zero,
             icon: const Icon(
-              Icons.add_circle_outline_rounded,
+              Icons.arrow_back_ios_new_rounded,
               color: Color(0xFF4338CA),
-              size: 22,
+              size: 20,
             ),
-            onPressed: () {},
+            onPressed: () => Navigator.pop(context),
           ),
         ),
         const SizedBox(width: 12),
@@ -90,7 +107,7 @@ class CreateTicketTopBar extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Form yang lebih rapi dan mudah di-scan',
+                'Laporkan masalah Anda sekarang',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: mutedColor(context)),
@@ -152,7 +169,7 @@ class CreateTicketHeroPanel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: const Text(
-                  'Ticket Creator',
+                  'Bantuan Teknis',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -162,7 +179,7 @@ class CreateTicketHeroPanel extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               const Text(
-                'Buat tiket baru',
+                'Ada Kendala Apa?',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 26,
@@ -172,7 +189,7 @@ class CreateTicketHeroPanel extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'Susun masalah, kategori, prioritas, dan lampiran dalam tampilan yang lebih modern.',
+                'Tim helpdesk kami siap membantu menyelesaikan masalah IT Anda secepat mungkin.',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.88),
                   fontSize: 13,
@@ -214,14 +231,14 @@ class CreateTicketFormPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const CreateTicketSectionTitle(
-              title: 'Judul tiket',
-              subtitle: 'Tulis ringkas dan jelas',
+              title: 'Judul Masalah',
+              subtitle: 'Gunakan judul yang singkat dan deskriptif',
             ),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.titleCtrl,
               decoration: const InputDecoration(
-                hintText: 'Masukkan judul masalah secara singkat',
+                hintText: 'Contoh: Akun e-learning tidak bisa login',
               ),
               validator: (value) =>
                   value == null || value.isEmpty ? 'Judul wajib diisi' : null,
@@ -229,10 +246,12 @@ class CreateTicketFormPanel extends StatelessWidget {
             const SizedBox(height: 16),
             const CreateTicketSectionTitle(
               title: 'Kategori',
-              subtitle: 'Pilih kategori yang paling relevan',
+              subtitle: 'Pilih jenis masalah Anda',
             ),
             const SizedBox(height: 8),
-            AnimatedBuilder(animation: controller, builder: (context, _) => DropdownButtonFormField<String>(
+            AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) => DropdownButtonFormField<String>(
                 value: controller.selectedCategory.value,
                 decoration: const InputDecoration(),
                 items: controller.categories
@@ -249,9 +268,14 @@ class CreateTicketFormPanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const CreateTicketSectionTitle(title: 'Prioritas', subtitle: 'Atur urgensi masalah'),
+            const CreateTicketSectionTitle(
+              title: 'Tingkat Urgensi',
+              subtitle: 'Seberapa mendesak masalah ini?',
+            ),
             const SizedBox(height: 8),
-            AnimatedBuilder(animation: controller, builder: (context, _) => Row(
+            AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) => Row(
                 children: controller.priorities.map((priority) {
                   final selected =
                       controller.selectedPriority.value == priority;
@@ -309,32 +333,32 @@ class CreateTicketFormPanel extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const CreateTicketSectionTitle(
-              title: 'Deskripsi',
-              subtitle: 'Jelaskan masalah secara detail',
+              title: 'Detail Masalah',
+              subtitle: 'Jelaskan kronologi kendala Anda',
             ),
             const SizedBox(height: 8),
             TextFormField(
               controller: controller.descriptionCtrl,
-              maxLines: 6,
+              maxLines: 5,
               decoration: const InputDecoration(
                 hintText:
-                    'Jelaskan masalah secara detail, termasuk langkah yang sudah dicoba...',
+                    'Contoh: Saya tidak bisa login karena password salah terus, sudah coba reset lewat email tapi tidak masuk...',
                 alignLabelWithHint: true,
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
                   return 'Deskripsi wajib diisi';
                 }
-                if (value.length < 20) {
-                  return 'Deskripsi minimal 20 karakter';
+                if (value.length < 10) {
+                  return 'Deskripsi terlalu singkat';
                 }
                 return null;
               },
             ),
             const SizedBox(height: 16),
             const CreateTicketSectionTitle(
-              title: 'Lampiran',
-              subtitle: 'Tambahkan bukti bila diperlukan',
+              title: 'Lampiran Gambar',
+              subtitle: 'Opsional: Berikan screenshot kendala',
             ),
             const SizedBox(height: 8),
             Row(
@@ -357,76 +381,89 @@ class CreateTicketFormPanel extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            AnimatedBuilder(animation: controller, builder: (context, _) {
-              if (controller.selectedImages.isEmpty) {
-                return Container(
-                  height: 110,
-                  decoration: BoxDecoration(
-                    color: softSurfaceColor(context),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: softBorderColor(context)),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'Belum ada lampiran',
-                      style: TextStyle(color: Color(0xFF64748B)),
+            AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) {
+                if (controller.selectedImages.isEmpty) {
+                  return Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: softSurfaceColor(context),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: softBorderColor(context)),
                     ),
-                  ),
-                );
-              }
-
-              return SizedBox(
-                height: 110,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: controller.selectedImages.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final image = controller.selectedImages[index];
-                    return Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(16),
-                          child: Image.file(
-                            File(image.path),
-                            width: 110,
-                            height: 110,
-                            fit: BoxFit.cover,
+                    child: const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.image_outlined, color: Color(0xFF94A3B8), size: 28),
+                          SizedBox(height: 4),
+                          Text(
+                            'Belum ada gambar terpilih',
+                            style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
                           ),
-                        ),
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: GestureDetector(
-                            onTap: () => controller.removeImage(index),
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                size: 12,
-                                color: Colors.white,
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return SizedBox(
+                  height: 100,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: controller.selectedImages.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final image = controller.selectedImages[index];
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.file(
+                              File(image.path),
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () => controller.removeImage(index),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close_rounded,
+                                  size: 14,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              );
-            }),
-            const SizedBox(height: 18),
-            AnimatedBuilder(animation: controller, builder: (context, _) => SizedBox(
+                        ],
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 24),
+            AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) => SizedBox(
                 width: double.infinity,
+                height: 54,
                 child: ElevatedButton.icon(
                   onPressed: controller.isSubmitting.value
                       ? null
-                      : controller.createTicket,
+                      : () => controller.createTicket(),
                   icon: controller.isSubmitting.value
                       ? const SizedBox(
                           width: 20,
@@ -439,8 +476,9 @@ class CreateTicketFormPanel extends StatelessWidget {
                       : const Icon(Icons.send_rounded),
                   label: Text(
                     controller.isSubmitting.value
-                        ? 'Mengirim...'
-                        : 'Kirim Tiket',
+                        ? 'Sedang Mengirim...'
+                        : 'Kirim Laporan',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
