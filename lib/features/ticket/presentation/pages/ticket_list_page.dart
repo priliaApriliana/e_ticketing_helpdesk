@@ -13,52 +13,60 @@ class TicketListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ctrl = context.watch<TicketProvider>();
-    final authService = context.read<AuthService>();
-    final user = authService.currentUser.value;
-    final tickets = ctrl.tickets;
-    final total = tickets.length;
-    final open = tickets.where((ticket) => ticket.status == 'open').length;
-    final inProgress = tickets
-        .where((ticket) => ticket.status == 'in_progress')
-        .length;
-    final resolved = tickets.where((ticket) => ticket.status == 'resolved').length;
+    final authService = Get.find<AuthService>();
+    
+    return Obx(() {
+      final user = authService.currentUser.value;
+      
+      // HAK AKSES: Hanya User dan Admin yang boleh buat tiket
+      final bool canCreate = user?.role == 'user' || user?.role == 'admin';
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Stack(
-        children: [
-          const TicketListBackdrop(),
-          SafeArea(
-            child: RefreshIndicator(
-              onRefresh: ctrl.loadTickets,
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
-                children: [
-                  TicketListTopBar(onRefresh: ctrl.loadTickets),
-                  const SizedBox(height: 18),
-                  TicketHeroPanel(
-                    userName: user?.name ?? 'Pengguna',
-                    totalTickets: total,
-                    openTickets: open,
-                    inProgressTickets: inProgress,
-                    resolvedTickets: resolved,
-                  ),
-                  const SizedBox(height: 16),
-                  FilterPanel(controller: ctrl),
-                  const SizedBox(height: 16),
-                  TicketFeed(controller: ctrl),
-                ],
+      final tickets = ctrl.tickets;
+      final total = tickets.length;
+      final open = tickets.where((ticket) => ticket.status == 'open').length;
+      final inProgress = tickets.where((ticket) => ticket.status == 'in_progress').length;
+      final resolved = tickets.where((ticket) => ticket.status == 'resolved').length;
+
+      return Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        body: Stack(
+          children: [
+            const TicketListBackdrop(),
+            SafeArea(
+              child: RefreshIndicator(
+                onRefresh: ctrl.loadTickets,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+                  children: [
+                    TicketListTopBar(onRefresh: ctrl.loadTickets),
+                    const SizedBox(height: 18),
+                    TicketHeroPanel(
+                      userName: user?.name ?? 'Pengguna',
+                      totalTickets: total,
+                      openTickets: open,
+                      inProgressTickets: inProgress,
+                      resolvedTickets: resolved,
+                    ),
+                    const SizedBox(height: 16),
+                    FilterPanel(controller: ctrl),
+                    const SizedBox(height: 16),
+                    TicketFeed(controller: ctrl),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.toNamed(Routes.ticketCreate),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Buat Tiket'),
-      ), // Revisi: Muncul untuk semua role
-      bottomNavigationBar: const TicketListBottomNav(selectedIndex: 1),
-    );
+          ],
+        ),
+        // Tombol hanya muncul jika diizinkan
+        floatingActionButton: canCreate 
+          ? FloatingActionButton.extended(
+              onPressed: () => Get.toNamed(Routes.ticketCreate),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Buat Tiket'),
+            )
+          : null,
+        bottomNavigationBar: const TicketListBottomNav(selectedIndex: 1),
+      );
+    });
   }
 }

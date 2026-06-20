@@ -133,6 +133,8 @@ class HeroTicketCard extends StatelessWidget {
     final heroStatusTextColor = ticket.status == 'closed'
         ? const Color(0xFFE2E8F0)
         : statusColor.withValues(alpha: 0.95);
+    
+    final ticketProvider = Get.find<TicketProvider>();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -189,7 +191,7 @@ class HeroTicketCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          ticket.id,
+                          '#${ticket.id.toString().substring(0, 8)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -237,11 +239,11 @@ class HeroTicketCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: HeroMetric(
+                    child: Obx(() => HeroMetric(
                       label: 'Komentar',
-                      value: '${ticket.commentCount}',
+                      value: '${ticketProvider.comments.length}',
                       color: Colors.white,
-                    ),
+                    )),
                   ),
                 ],
               ),
@@ -364,18 +366,6 @@ class InfoPanel extends StatelessWidget {
               value: ticket.assignedToName!,
             ),
           ],
-          const SizedBox(height: 10),
-          InfoRow(
-            icon: Icons.schedule_rounded,
-            label: 'Dibuat',
-            value: DateFormat('dd MMM yyyy, HH:mm').format(ticket.createdAt),
-          ),
-          const SizedBox(height: 10),
-          InfoRow(
-            icon: Icons.update_rounded,
-            label: 'Diupdate',
-            value: DateFormat('dd MMM yyyy, HH:mm').format(ticket.updatedAt),
-          ),
         ],
       ),
     );
@@ -504,7 +494,7 @@ class TimelinePanel extends StatelessWidget {
     final steps = [
       ('open', 'Tiket dibuka'),
       ('in_progress', 'Sedang dikerjakan'),
-      ('resolved', 'Sudah direspon'),
+      ('resolved', 'Selesai Penanganan'),
       ('closed', 'Tiket ditutup'),
     ];
 
@@ -966,6 +956,7 @@ Future<void> showActionMenu(
   final isAdmin = actor.isAdmin;
   final isHelpdesk = actor.role == 'helpdesk';
   final isTechnicalSupport = actor.isTechnicalSupport;
+  final isAssignedToMe = ticket.assignedTo == actor.id;
   final technicalSupports = authService.technicalSupportUsers;
 
   await showModalBottomSheet<void>(
@@ -991,16 +982,16 @@ Future<void> showActionMenu(
                   ctrl.updateStatus(ticketId, 'in_progress');
                 },
               ),
-            if (isAdmin || (isTechnicalSupport && ticket.assignedTo == actor.id))
+            if (isAdmin || (isTechnicalSupport && isAssignedToMe))
               ListTile(
                 leading: const Icon(Icons.verified_rounded),
-                title: const Text('Set Selesai Teknis'),
+                title: const Text('Set Selesai Penanganan'),
                 onTap: () {
                   Get.back();
                   ctrl.updateStatus(ticketId, 'resolved');
                 },
               ),
-            if (isAdmin)
+            if (isAdmin || isHelpdesk)
               ListTile(
                 leading: const Icon(Icons.lock_rounded),
                 title: const Text('Close Ticket (Selesai)'),

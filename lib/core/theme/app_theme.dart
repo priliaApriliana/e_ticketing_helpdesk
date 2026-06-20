@@ -242,7 +242,7 @@ class AppTheme {
       case 'in_progress':
         return 'Diproses';
       case 'resolved':
-        return 'Selesai Teknis';
+        return 'Selesai Penanganan';
       case 'closed':
         return 'Selesai';
       default:

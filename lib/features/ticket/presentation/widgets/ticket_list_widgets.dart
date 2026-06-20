@@ -94,14 +94,10 @@ class TicketListTopBar extends StatelessWidget {
               ),
             ],
           ),
-          child: IconButton(
-            padding: EdgeInsets.zero,
-            icon: Icon(
-              Icons.list_alt_rounded,
-              color: titleColor(context),
-              size: 22,
-            ),
-            onPressed: () {},
+          child: Icon(
+            Icons.list_alt_rounded,
+            color: titleColor(context),
+            size: 22,
           ),
         ),
         const SizedBox(width: 12),
@@ -656,7 +652,7 @@ class TicketCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 3),
                         Text(
-                          ticket.id,
+                          '#${ticket.id.toString().substring(0, 8)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(

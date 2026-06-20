@@ -6,8 +6,18 @@ import 'package:e_ticketing_helpdesk/core/services/ticket_service.dart';
 class TicketRepository {
   final TicketService _ticketService = Get.find<TicketService>();
 
-  Future<List<TicketModel>> getTickets({String? userId, String? status}) {
-    return _ticketService.getTickets(userId: userId, status: status);
+  Future<List<TicketModel>> getTickets({
+    String? userId,
+    String? createdBy,
+    String? assignedTo,
+    String? status,
+  }) {
+    return _ticketService.getTickets(
+      userId: userId,
+      createdBy: createdBy,
+      assignedTo: assignedTo,
+      status: status,
+    );
   }
 
   Future<TicketModel?> getTicketById(String id) {
@@ -74,7 +84,3 @@ class TicketRepository {
     return _ticketService.updateTicketStatus(ticketId, status);
   }
 }
-
-
-
-

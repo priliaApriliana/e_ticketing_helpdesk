@@ -5,12 +5,15 @@ import 'package:image_picker/image_picker.dart';
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_model.dart';
 import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
 import 'package:e_ticketing_helpdesk/core/services/notification_service.dart';
+import 'package:e_ticketing_helpdesk/core/services/socket_service.dart';
 import 'package:e_ticketing_helpdesk/features/ticket/data/repositories/ticket_repository.dart';
+import 'package:e_ticketing_helpdesk/features/dashboard/presentation/providers/dashboard_provider.dart';
 
 class TicketProvider extends ChangeNotifier {
   final TicketRepository _ticketRepository = TicketRepository();
   final _authService = Get.find<AuthService>();
   final _notificationService = Get.find<NotificationService>();
+  final _socketService = Get.find<SocketService>();
 
   final tickets = <TicketModel>[].obs;
   final comments = <CommentModel>[].obs;
@@ -35,9 +38,39 @@ class TicketProvider extends ChangeNotifier {
 
   void onInit() {
     loadTickets();
+    _initSocketListeners();
   }
 
-  // --- Filter Methods ---
+  void _initSocketListeners() {
+    _socketService.on('ticket_created', (data) {
+      final user = _authService.currentUser.value;
+      if (user == null) return;
+      
+      // Refresh jika Admin/Helpdesk (karena mereka harus tahu tiket masuk baru)
+      // atau jika itu tiket buatan User sendiri.
+      if (user.isAdmin || user.isHelpdesk || (user.isUser && data['created_by'] == user.id)) {
+        loadTickets();
+      }
+    });
+
+    _socketService.on('ticket_updated', (data) {
+      if (selectedTicket.value?.id == data['id']) {
+        loadTicketDetail(data['id']);
+      }
+      loadTickets();
+    });
+
+    _socketService.on('comment_added', (data) {
+      if (selectedTicket.value?.id == data['ticketId']) {
+        final newComment = CommentModel.fromJson(data['comment']);
+        if (!comments.any((c) => c.id == newComment.id)) {
+          comments.add(newComment);
+          notifyListeners();
+        }
+      }
+    });
+  }
+
   void setFilter(String filter) {
     selectedFilter.value = filter;
     notifyListeners();
@@ -54,17 +87,38 @@ class TicketProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- Ticket Loading ---
+  void _refreshDashboard() {
+    try {
+      if (Get.isRegistered<DashboardProvider>()) {
+        Get.find<DashboardProvider>().loadStats();
+      }
+    } catch (e) {
+      print('Error refreshing dashboard: $e');
+    }
+  }
+
   Future<void> loadTickets() async {
     isLoading.value = true;
     notifyListeners();
     try {
       final user = _authService.currentUser.value;
-      final userId = user?.isUser == true ? user?.id : null;
+      String? createdBy;
+      String? assignedTo;
+
+      if (user != null) {
+        if (user.isUser) {
+          createdBy = user.id; // Filter: Hanya buatan sendiri
+        } else if (user.isTechnicalSupport && !user.isAdmin) {
+          assignedTo = user.id; // Filter: Hanya yang ditugaskan ke saya
+        }
+        // Admin & Helpdesk: Filter tetap null agar menarik semua data
+      }
+
       final status = selectedFilter.value == 'all' ? null : selectedFilter.value;
       
       tickets.value = await _ticketRepository.getTickets(
-        userId: userId,
+        createdBy: createdBy,
+        assignedTo: assignedTo,
         status: status,
       );
     } finally {
@@ -88,7 +142,6 @@ class TicketProvider extends ChangeNotifier {
     }
   }
 
-  // --- Image Picking ---
   Future<void> pickImages(ImageSource source) async {
     final picker = ImagePicker();
     if (source == ImageSource.gallery) {
@@ -110,8 +163,6 @@ class TicketProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- Ticket Actions ---
-  // Kita pastikan createTicket adalah fungsi yang bisa dipanggil tanpa parameter
   Future<void> createTicket() async {
     if (!createFormKey.currentState!.validate()) return;
     final user = _authService.currentUser.value;
@@ -133,6 +184,7 @@ class TicketProvider extends ChangeNotifier {
       _clearForm();
       Get.back();
       loadTickets();
+      _refreshDashboard();
       Get.snackbar('Berhasil', 'Tiket bantuan telah berhasil dibuat.');
     } catch (e) {
       Get.snackbar('Error', 'Gagal membuat tiket: $e');
@@ -158,6 +210,7 @@ class TicketProvider extends ChangeNotifier {
       if (success) {
         await loadTicketDetail(ticketId);
         loadTickets();
+        _refreshDashboard();
         Get.snackbar('Berhasil', 'Tiket telah ditugaskan ke $assignedToName');
       }
     } finally {
@@ -174,6 +227,7 @@ class TicketProvider extends ChangeNotifier {
       if (success) {
         await loadTicketDetail(ticketId);
         loadTickets();
+        _refreshDashboard();
         Get.snackbar('Berhasil', 'Penugasan teknisi telah dibatalkan.');
       }
     } finally {
@@ -186,18 +240,18 @@ class TicketProvider extends ChangeNotifier {
     final actor = _authService.currentUser.value;
     if (actor == null) return;
 
-    if (actor.isTechnicalSupport && status != 'resolved') {
-      Get.snackbar('Akses Ditolak', 'Teknisi hanya bisa set ke Selesai Teknis.');
+    if (actor.isTechnicalSupport && status != 'resolved' && !actor.isAdmin) {
+      Get.snackbar('Akses Ditolak', 'Teknisi hanya bisa set ke Selesai Penanganan.');
       return;
     }
 
     await _ticketRepository.updateTicketStatus(ticketId, status);
     await loadTicketDetail(ticketId);
     loadTickets();
+    _refreshDashboard();
     Get.snackbar('Berhasil', 'Status tiket diperbarui.');
   }
 
-  // --- Comment Actions ---
   void prepareReply(String username) {
     commentCtrl.text = "@$username ";
     commentCtrl.selection = TextSelection.fromPosition(
@@ -220,7 +274,9 @@ class TicketProvider extends ChangeNotifier {
         userRole: user.role,
         content: commentCtrl.text.trim(),
       );
-      comments.add(comment);
+      if (!comments.any((c) => c.id == comment.id)) {
+          comments.add(comment);
+      }
       commentCtrl.clear();
       notifyListeners();
     } finally {

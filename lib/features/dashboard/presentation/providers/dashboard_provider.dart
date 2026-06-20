@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
+import 'package:e_ticketing_helpdesk/core/services/socket_service.dart';
 import 'package:e_ticketing_helpdesk/features/dashboard/data/repositories/dashboard_repository.dart';
 
 class DashboardProvider extends ChangeNotifier {
   final _authService = Get.find<AuthService>();
   final DashboardRepository _dashboardRepository = DashboardRepository();
+  final _socketService = Get.find<SocketService>();
 
   Map<String, int> stats = <String, int>{};
   Map<String, int> roleMetrics = <String, int>{};
@@ -14,6 +16,13 @@ class DashboardProvider extends ChangeNotifier {
 
   void onInit() {
     loadStats();
+    _initSocketListeners();
+  }
+
+  void _initSocketListeners() {
+    _socketService.on('stats_updated', (_) => loadStats());
+    _socketService.on('ticket_created', (_) => loadStats());
+    _socketService.on('ticket_updated', (_) => loadStats());
   }
 
   Future<void> loadStats() async {
@@ -21,32 +30,49 @@ class DashboardProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final user = _authService.currentUser.value;
-      final userId = user?.isUser == true ? user?.id : null;
+      if (user == null) return;
+      
+      String? createdBy;
+      String? assignedTo;
 
-      // Sekarang menggunakan await karena mengambil data dari API
-      stats = await _dashboardRepository.getStatistics(userId);
-      final tickets = await _dashboardRepository.getTickets(userId: userId);
+      if (user.isUser) {
+        createdBy = user.id;
+      } else if (user.isTechnicalSupport && !user.isAdmin) {
+        assignedTo = user.id;
+      }
 
-      if (user?.isUser == true) {
+      // 1. Ambil Statistik Ringkasan (Hero Panel & Chart)
+      // Kita asumsikan API dashboard/metrics sudah support created_by/assigned_to
+      stats = await _dashboardRepository.getStatistics(
+        createdBy: createdBy,
+        assignedTo: assignedTo,
+      );
+
+      // 2. Ambil Daftar Tiket untuk menghitung Role Metrics secara detail
+      final tickets = await _dashboardRepository.getTickets(
+        createdBy: createdBy,
+        assignedTo: assignedTo,
+      );
+
+      if (user.isUser) {
         roleMetrics = {
           'submitted': tickets.length,
           'ongoing': tickets.where((t) => t.status == 'in_progress').length,
-          'finish': tickets.where((t) => t.status == 'closed').length,
+          'finish': tickets.where((t) => t.status == 'resolved' || t.status == 'closed').length,
+        };
+      } else if (user.isTechnicalSupport && !user.isAdmin) {
+        roleMetrics = {
+          'my_tasks': tickets.length,
+          'ongoing': tickets.where((t) => t.status == 'in_progress').length,
+          'resolved': tickets.where((t) => t.status == 'resolved').length,
         };
       } else {
-        final activeTickets = tickets.where((t) => t.status != 'closed').length;
-        final unhandledTickets = tickets
-            .where(
-              (t) =>
-                  t.status == 'open' &&
-                  (t.assignedTo == null || t.assignedTo!.trim().isEmpty),
-            )
-            .length;
+        // Dashboard Helpdesk / Admin: Global
+        final unhandled = tickets.where((t) => t.status == 'open' && (t.assignedTo == null)).length;
         roleMetrics = {
-          'ticket_in': activeTickets,
+          'ticket_in': tickets.where((t) => t.status != 'closed' && t.status != 'resolved').length,
+          'unhandled': unhandled,
           'ongoing': tickets.where((t) => t.status == 'in_progress').length,
-          'unhandled': unhandledTickets,
-          'approved_finish': tickets.where((t) => t.status == 'closed').length,
           'total_incoming': tickets.length,
         };
       }

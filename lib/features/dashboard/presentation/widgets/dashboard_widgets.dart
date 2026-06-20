@@ -502,6 +502,74 @@ class RoleMetricsPanel extends StatelessWidget {
             ),
           ];
 
+    // Khusus untuk Technical Support jika datanya berbeda
+    if (!isUser && metrics.containsKey('my_tasks')) {
+      return Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: panelColor(context),
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: panelBorderColor(context)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Informasi Dashboard Teknisi',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: titleColor(context),
+              ),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'Fokus pada tiket yang ditugaskan kepada Anda.',
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 11),
+            ),
+            const SizedBox(height: 14),
+            GridView.count(
+              crossAxisCount: 3,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 0.8,
+              children: [
+                RoleMetricTile(item: RoleMetricData(
+                  label: 'Tugas Saya',
+                  value: metrics['my_tasks'] ?? 0,
+                  icon: Icons.assignment_rounded,
+                  color: const Color(0xFF2563EB),
+                  onTap: () => _openTicketList(context, 'all'),
+                )),
+                RoleMetricTile(item: RoleMetricData(
+                  label: 'Diproses',
+                  value: metrics['ongoing'] ?? 0,
+                  icon: Icons.timelapse_rounded,
+                  color: const Color(0xFFD97706),
+                  onTap: () => _openTicketList(context, 'in_progress'),
+                )),
+                RoleMetricTile(item: RoleMetricData(
+                  label: 'Selesai Penanganan',
+                  value: metrics['resolved'] ?? 0,
+                  icon: Icons.verified_rounded,
+                  color: const Color(0xFF16A34A),
+                  onTap: () => _openTicketList(context, 'resolved'),
+                )),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -955,7 +1023,7 @@ class StatusLegend extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         LegendRow(
-          label: 'Resolved',
+          label: 'Selesai Penanganan',
           value: resolved,
           color: AppTheme.statusColor('resolved'),
           hint: _ratioText(resolved),
@@ -1070,14 +1138,15 @@ class QuickActionsPanel extends StatelessWidget {
         gradient: const [Color(0xFF7C3AED), Color(0xFF4F46E5)],
         onTap: onTickets,
       ),
-      QuickActionItem(
-        title: 'Buat tiket',
-        subtitle: canCreateTicket ? 'Buka form' : 'Tidak tersedia',
-        icon: Icons.add_circle_outline_rounded,
-        gradient: const [Color(0xFF8B5CF6), Color(0xFF6366F1)],
-        onTap: onCreateTicket,
-        disabled: !canCreateTicket,
-      ),
+      // Hanya tampilkan jika canCreateTicket true (role user)
+      if (canCreateTicket)
+        QuickActionItem(
+          title: 'Buat tiket',
+          subtitle: 'Buka form',
+          icon: Icons.add_circle_outline_rounded,
+          gradient: const [Color(0xFF8B5CF6), Color(0xFF6366F1)],
+          onTap: onCreateTicket,
+        ),
       QuickActionItem(
         title: 'Profil',
         subtitle: 'Akun saya',
@@ -1142,11 +1211,12 @@ class QuickActionsPanel extends StatelessWidget {
             itemCount: actions.length,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
-              childAspectRatio: 1.10,
+              // Jika aksi ganjil (role non-user), gunakan rasio yang sedikit beda agar rapi
+              childAspectRatio: actions.length == 3 ? 1.4 : 1.10,
             ),
             itemBuilder: (context, index) {
               final action = actions[index];

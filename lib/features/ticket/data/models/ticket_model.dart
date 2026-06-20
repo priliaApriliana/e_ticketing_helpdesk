@@ -31,22 +31,30 @@ class TicketModel {
     this.commentCount = 0,
   });
 
-  factory TicketModel.fromJson(Map<String, dynamic> json) => TicketModel(
-        id: json['id'],
-        title: json['title'],
-        description: json['description'],
-        status: json['status'],
-        priority: json['priority'],
-        category: json['category'],
-        createdBy: json['created_by'],
-        createdByName: json['created_by_name'],
-        assignedTo: json['assigned_to'],
-        assignedToName: json['assigned_to_name'],
-        attachments: List<String>.from(json['attachments'] ?? []),
-        createdAt: DateTime.parse(json['created_at']),
-        updatedAt: DateTime.parse(json['updated_at']),
-        commentCount: json['comment_count'] ?? 0,
-      );
+  factory TicketModel.fromJson(Map<String, dynamic> json) {
+    // Penanganan fallback jika created_at atau updated_at null
+    DateTime parseDate(dynamic date) {
+      if (date == null) return DateTime.now();
+      return DateTime.parse(date.toString());
+    }
+
+    return TicketModel(
+      id: json['id'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      status: json['status'] ?? 'open',
+      priority: json['priority'] ?? 'low',
+      category: json['category'] ?? 'Lainnya',
+      createdBy: json['created_by'] ?? '',
+      createdByName: json['created_by_name'] ?? 'User',
+      assignedTo: json['assigned_to'],
+      assignedToName: json['assigned_to_name'],
+      attachments: List<String>.from(json['attachments'] ?? []),
+      createdAt: parseDate(json['created_at']),
+      updatedAt: parseDate(json['updated_at']),
+      commentCount: json['comment_count'] ?? 0,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -86,13 +94,15 @@ class CommentModel {
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json) => CommentModel(
-        id: json['id'],
-        ticketId: json['ticket_id'],
-        userId: json['user_id'],
-        userName: json['user_name'],
-        userRole: json['user_role'],
-        content: json['content'],
-        createdAt: DateTime.parse(json['created_at']),
+        id: json['id'] ?? '',
+        ticketId: json['ticket_id'] ?? '',
+        userId: json['user_id'] ?? '',
+        userName: json['user_name'] ?? 'User',
+        userRole: json['user_role'] ?? 'user',
+        content: json['content'] ?? '',
+        createdAt: json['created_at'] != null 
+            ? DateTime.parse(json['created_at']) 
+            : DateTime.now(),
       );
 
   Map<String, dynamic> toJson() => {

@@ -14,11 +14,19 @@ class TicketService extends GetxService {
         'Authorization': 'Bearer ${_box.read('token')}',
       };
 
-  Future<List<TicketModel>> getTickets({String? userId, String? status}) async {
+  Future<List<TicketModel>> getTickets({
+    String? userId,
+    String? createdBy,
+    String? assignedTo,
+    String? status,
+  }) async {
     try {
       String url = ApiConstants.tickets;
       Map<String, String> queryParams = {};
+      
       if (userId != null) queryParams['user_id'] = userId;
+      if (createdBy != null) queryParams['created_by'] = createdBy;
+      if (assignedTo != null) queryParams['assigned_to'] = assignedTo;
       if (status != null) queryParams['status'] = status;
 
       if (queryParams.isNotEmpty) {
