@@ -36,6 +36,7 @@ class ProfileScreen extends GetView<ProfileProvider> {
                 AccountSummaryCard(user: user),
                 const SizedBox(height: 16),
                 ProfileMenuPanel(
+                  isAdmin: user?.isAdmin ?? false, // Tambahkan parameter ini
                   onEditProfile: () => Get.snackbar(
                     'Info',
                     'Fitur edit profil masih dalam pengembangan',

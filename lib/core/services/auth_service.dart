@@ -38,9 +38,48 @@ class AuthService extends GetxService {
         'Authorization': 'Bearer ${_box.read('token')}',
       };
 
-  // Getters yang dibutuhkan oleh TicketProvider
-  Set<String> get adminIds => {'admin-uuid-1'}; // Sesuaikan logic ID jika ada
-  Set<String> get helpdeskIds => {'helpdesk-uuid-1'};
+  Future<List<UserModel>> getAllUsers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConstants.baseUrl}/users'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        List data = jsonDecode(response.body);
+        return data.map((u) => UserModel.fromJson(u)).toList();
+      }
+    } catch (e) {
+      debugPrint('Error getAllUsers: $e');
+    }
+    return [];
+  }
+
+  Future<bool> updateUserRole(String userId, String newRole) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${ApiConstants.baseUrl}/users/$userId/role'),
+        headers: _headers,
+        body: jsonEncode({'role': newRole}),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error updateUserRole: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteUser(String userId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${ApiConstants.baseUrl}/users/$userId'),
+        headers: _headers,
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error deleteUser: $e');
+      return false;
+    }
+  }
 
   Future<void> fetchTechnicalSupports() async {
     try {
@@ -57,7 +96,6 @@ class AuthService extends GetxService {
     }
   }
 
-  // Method yang dibutuhkan oleh TicketProvider
   bool isTechnicalSupportId(String userId) {
     return technicalSupportUsers.any((u) => u.id == userId);
   }
@@ -103,7 +141,6 @@ class AuthService extends GetxService {
     }
   }
 
-  // Method resetPassword yang dibutuhkan AuthRepository
   Future<Map<String, dynamic>> resetPassword(String email, String newPassword) async {
     try {
       final response = await http.post(
@@ -118,7 +155,6 @@ class AuthService extends GetxService {
     }
   }
 
-  // Method changePassword yang dibutuhkan ProfileRepository
   Future<Map<String, dynamic>> changePassword(String oldPassword, String newPassword) async {
     try {
       final response = await http.post(

@@ -9,6 +9,8 @@ import 'package:e_ticketing_helpdesk/features/ticket/presentation/pages/ticket_d
 import 'package:e_ticketing_helpdesk/features/ticket/presentation/pages/create_ticket_page.dart';
 import 'package:e_ticketing_helpdesk/features/profile/presentation/pages/profile_page.dart';
 import 'package:e_ticketing_helpdesk/features/notification/presentation/pages/notification_page.dart';
+import 'package:e_ticketing_helpdesk/features/setting/presentation/pages/setting_page.dart';
+import 'package:e_ticketing_helpdesk/features/profile/presentation/pages/user_management_page.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -22,5 +24,7 @@ class AppPages {
     GetPage(name: Routes.ticketCreate, page: () => const CreateTicketScreen()),
     GetPage(name: Routes.profile, page: () => const ProfileScreen()),
     GetPage(name: Routes.notifications, page: () => const NotificationPage()),
+    GetPage(name: Routes.settings, page: () => const SettingScreen()),
+    GetPage(name: Routes.userManagement, page: () => const UserManagementScreen()),
   ];
 }

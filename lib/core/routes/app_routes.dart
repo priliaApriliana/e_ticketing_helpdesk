@@ -8,6 +8,6 @@ abstract class Routes {
   static const ticketCreate = '/tickets/create';
   static const profile = '/profile';
   static const notifications = '/notifications';
+  static const settings = '/settings';
+  static const userManagement = '/user-management';
 }
-
-

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
 import 'package:e_ticketing_helpdesk/features/notification/presentation/providers/notification_provider.dart';
+import '../../../../core/controllers/theme_controller.dart';
 
 class ProfileBackdrop extends StatelessWidget {
   const ProfileBackdrop({super.key});
@@ -326,8 +327,6 @@ class AccountSummaryCard extends StatelessWidget {
             label: 'Role',
             value: ProfileUIHelpers.formatRole(user?.role ?? ''),
           ),
-          const SizedBox(height: 10),
-          const ThemeToggleRow(),
         ],
       ),
     );
@@ -397,57 +396,8 @@ class ProfileInfoRow extends StatelessWidget {
   }
 }
 
-class ThemeToggleRow extends StatelessWidget {
-  const ThemeToggleRow({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: ProfileUIHelpers.softSurfaceColor(context),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: ProfileUIHelpers.softBorderColor(context)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: const Color(0xFF4F46E5).withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              Icons.dark_mode_outlined,
-              color: ProfileUIHelpers.titleColor(context),
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Dark Mode',
-              style: TextStyle(
-                fontSize: 13,
-                color: ProfileUIHelpers.titleColor(context),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          Switch(
-            value: Get.isDarkMode,
-            onChanged: (value) {
-              Get.changeThemeMode(value ? ThemeMode.dark : ThemeMode.light);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class ProfileMenuPanel extends StatelessWidget {
+  final bool isAdmin;
   final VoidCallback onEditProfile;
   final VoidCallback onChangePassword;
   final VoidCallback onNotifications;
@@ -455,6 +405,7 @@ class ProfileMenuPanel extends StatelessWidget {
 
   const ProfileMenuPanel({
     super.key,
+    required this.isAdmin,
     required this.onEditProfile,
     required this.onChangePassword,
     required this.onNotifications,
@@ -514,7 +465,23 @@ class ProfileMenuPanel extends StatelessWidget {
               );
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
+          ProfileMenuTile(
+            icon: Icons.settings_outlined,
+            title: 'Pengaturan',
+            subtitle: 'Tema dan preferensi aplikasi',
+            onTap: () => Get.toNamed(Routes.settings),
+          ),
+          if (isAdmin) ...[
+            const SizedBox(height: 10),
+            ProfileMenuTile(
+              icon: Icons.group_outlined,
+              title: 'Manajemen Pengguna',
+              subtitle: 'Kelola role dan data pengguna',
+              onTap: () => Get.toNamed(Routes.userManagement),
+            ),
+          ],
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(

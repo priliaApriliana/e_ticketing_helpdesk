@@ -186,19 +186,38 @@ class LoginScreen extends StatelessWidget {
                                         child: TextButton(
                                           onPressed: () =>
                                               showPasswordActionDialog(
-                                                title: 'Reset Password',
+                                                title: 'Lupa Password',
                                                 description:
-                                                    'Masukkan email akun dan password baru untuk mengganti password akun demo Anda.',
+                                                    'Masukkan email akun Anda dan password baru untuk mereset akses.',
                                                 submitLabel: 'Reset Password',
                                                 showEmailField: true,
                                                 requireCurrentPassword: false,
-                                                onSubmit: (email, _, newPassword) =>
-                                                    context
-                                                        .read<AuthProvider>()
-                                                        .resetPassword(
-                                                          email,
-                                                          newPassword,
-                                                        ),
+                                                onSubmit: (email, _, newPassword) async {
+                                                  final result = await context
+                                                      .read<AuthProvider>()
+                                                      .resetPassword(
+                                                        email!,
+                                                        newPassword,
+                                                      );
+                                                  
+                                                  if (result['success']) {
+                                                    Get.snackbar(
+                                                      'Berhasil',
+                                                      'Password Anda telah diperbarui. Silakan login kembali.',
+                                                      backgroundColor: Colors.green,
+                                                      colorText: Colors.white,
+                                                      snackPosition: SnackPosition.BOTTOM,
+                                                    );
+                                                  } else {
+                                                    Get.snackbar(
+                                                      'Gagal',
+                                                      result['message'] ?? 'Gagal mereset password',
+                                                      backgroundColor: Colors.red,
+                                                      colorText: Colors.white,
+                                                      snackPosition: SnackPosition.BOTTOM,
+                                                    );
+                                                  }
+                                                },
                                               ),
                                           child: const Text('Lupa Password?'),
                                         ),

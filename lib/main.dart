@@ -10,11 +10,13 @@ import 'core/services/auth_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/ticket_service.dart';
 import 'core/services/socket_service.dart';
+import 'core/controllers/theme_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'features/notification/presentation/providers/notification_provider.dart';
 import 'features/profile/presentation/providers/profile_provider.dart';
+import 'features/profile/presentation/providers/user_management_provider.dart'; // Tambahkan ini
 import 'features/ticket/presentation/providers/ticket_provider.dart';
 
 void main() async {
@@ -28,6 +30,7 @@ void main() async {
   final ticketService = TicketService();
   final notificationService = NotificationService();
   final socketService = SocketService();
+  final themeController = Get.put(ThemeController(), permanent: true);
 
   // 2. Daftarkan Service ke GetX
   Get.put<AuthService>(authService, permanent: true);
@@ -44,17 +47,20 @@ void main() async {
   final ticketProvider = TicketProvider();
   final profileProvider = ProfileProvider();
   final notificationProvider = NotificationProvider();
+  final userManagementProvider = UserManagementProvider(); // Tambahkan ini
 
   Get.put<AuthProvider>(authProvider, permanent: true);
   Get.put<DashboardProvider>(dashboardProvider, permanent: true);
   Get.put<TicketProvider>(ticketProvider, permanent: true);
   Get.put<ProfileProvider>(profileProvider, permanent: true);
   Get.put<NotificationProvider>(notificationProvider, permanent: true);
+  Get.put<UserManagementProvider>(userManagementProvider, permanent: true); // Tambahkan ini
 
-  // 5. Jalankan fungsi onInit (yang akan memasang socket listener)
+  // 5. Jalankan fungsi onInit
   dashboardProvider.onInit();
   ticketProvider.onInit();
   notificationProvider.onInit();
+  userManagementProvider.onInit(); // Tambahkan ini
 
   runApp(
     MultiProvider(
@@ -68,6 +74,7 @@ void main() async {
         ChangeNotifierProvider.value(value: ticketProvider),
         ChangeNotifierProvider.value(value: profileProvider),
         ChangeNotifierProvider.value(value: notificationProvider),
+        ChangeNotifierProvider.value(value: userManagementProvider), // Tambahkan ini
       ],
       child: const MyApp(),
     ),
@@ -79,14 +86,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    final themeController = Get.find<ThemeController>();
+
+    return Obx(() => GetMaterialApp(
       title: 'E-Ticketing Helpdesk',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.light,
+      themeMode: themeController.themeMode.value,
       initialRoute: Routes.splash,
       getPages: AppPages.pages,
-    );
+    ));
   }
 }
