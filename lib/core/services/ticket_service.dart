@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
+import 'dart:io';
 
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_model.dart';
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_log_model.dart';
@@ -108,18 +109,27 @@ class TicketService extends GetxService {
     required String createdByName,
     List<String> attachments = const [],
   }) async {
-    final response = await http.post(
-      Uri.parse(ApiConstants.tickets),
-      headers: _headers,
-      body: jsonEncode({
-        'title': title,
-        'description': description,
-        'priority': priority,
-        'category': category,
-        'created_by': createdBy,
-        'attachments': attachments,
-      }),
-    );
+    // Menggunakan MultipartRequest untuk upload file fisik
+    var request = http.MultipartRequest('POST', Uri.parse(ApiConstants.tickets));
+    
+    request.headers.addAll({
+      'Authorization': 'Bearer ${_box.read('token')}',
+    });
+
+    request.fields['title'] = title;
+    request.fields['description'] = description;
+    request.fields['priority'] = priority;
+    request.fields['category'] = category;
+    request.fields['created_by'] = createdBy;
+
+    for (var path in attachments) {
+      if (path.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('attachments', path));
+      }
+    }
+
+    var streamedResponse = await request.send();
+    var response = await http.Response.fromStream(streamedResponse);
 
     if (response.statusCode == 201 || response.statusCode == 200) {
       return TicketModel.fromJson(jsonDecode(response.body));
@@ -207,6 +217,19 @@ class TicketService extends GetxService {
       return response.statusCode == 200;
     } catch (e) {
       print('Error updating status: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteTicket(String ticketId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse(ApiConstants.ticketDetail(ticketId)),
+        headers: _headers,
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      print('Error deleting ticket: $e');
       return false;
     }
   }

@@ -104,4 +104,8 @@ class TicketRepository {
       note: note,
     );
   }
+
+  Future<bool> deleteTicket(String ticketId) {
+    return _ticketService.deleteTicket(ticketId);
+  }
 }

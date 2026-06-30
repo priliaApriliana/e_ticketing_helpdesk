@@ -280,6 +280,9 @@ class TicketProvider extends ChangeNotifier {
   }
 
   Future<void> unassignTicket(String ticketId) async {
+    final actor = _authService.currentUser.value;
+    if (actor == null) return;
+
     isSubmitting.value = true;
     notifyListeners();
     try {
@@ -322,6 +325,25 @@ class TicketProvider extends ChangeNotifier {
         _refreshDashboard();
         Get.snackbar('Berhasil', 'Status tiket diperbarui.');
       }
+    } finally {
+      isSubmitting.value = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteTicket(String ticketId) async {
+    isSubmitting.value = true;
+    notifyListeners();
+    try {
+      final success = await _ticketRepository.deleteTicket(ticketId);
+      if (success) {
+        Get.back(); // Kembali dari detail
+        loadTickets();
+        _refreshDashboard();
+        Get.snackbar('Berhasil', 'Tiket telah dihapus.');
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal menghapus tiket: $e');
     } finally {
       isSubmitting.value = false;
       notifyListeners();

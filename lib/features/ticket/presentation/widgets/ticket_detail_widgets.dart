@@ -1090,7 +1090,7 @@ Future<void> showActionMenu(
           children: [
             if (isAdmin || isHelpdesk)
               ListTile(
-                leading: const Icon(Icons.timelapse_rounded),
+                leading: const Icon(Icons.timelapse_rounded, color: Colors.blue),
                 title: const Text('Set Diproses'),
                 onTap: () {
                   Get.back();
@@ -1099,7 +1099,7 @@ Future<void> showActionMenu(
               ),
             if (isAdmin || (isTechnicalSupport && isAssignedToMe))
               ListTile(
-                leading: const Icon(Icons.verified_rounded),
+                leading: const Icon(Icons.verified_rounded, color: Colors.green),
                 title: const Text('Set Selesai Penanganan'),
                 onTap: () {
                   Get.back();
@@ -1108,14 +1108,14 @@ Future<void> showActionMenu(
               ),
             if (isAdmin || isHelpdesk)
               ListTile(
-                leading: const Icon(Icons.lock_rounded),
+                leading: const Icon(Icons.lock_rounded, color: Colors.indigo),
                 title: const Text('Close Ticket (Selesai)'),
                 onTap: () {
                   Get.back();
                   ctrl.updateStatus(ticketId, 'closed');
                 },
               ),
-            if (isAdmin || isHelpdesk) const Divider(),
+            const Divider(),
             if ((isAdmin || isHelpdesk) && ticket.assignedTo == null)
               ListTile(
                 leading: const Icon(Icons.assignment_ind_outlined),
@@ -1153,6 +1153,15 @@ Future<void> showActionMenu(
                 onTap: () {
                   Get.back();
                   _showUnassignConfirm(ctrl, ticketId);
+                },
+              ),
+            if (isAdmin)
+              ListTile(
+                leading: const Icon(Icons.delete_forever_rounded, color: Colors.red),
+                title: const Text('Hapus Tiket', style: TextStyle(color: Colors.red)),
+                onTap: () {
+                  Get.back();
+                  _showDeleteConfirm(ctrl, ticketId);
                 },
               ),
           ],
@@ -1251,6 +1260,35 @@ Future<void> _showUnassignConfirm(
 
   if (agree == true) {
     ctrl.unassignTicket(ticketId);
+  }
+}
+
+Future<void> _showDeleteConfirm(
+  TicketProvider ctrl,
+  String ticketId,
+) async {
+  final agree = await Get.dialog<bool>(
+    AlertDialog(
+      title: const Text('Hapus Tiket?'),
+      content: const Text(
+        'Tindakan ini permanen dan tidak dapat dibatalkan.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back(result: false),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          onPressed: () => Get.back(result: true),
+          child: const Text('Hapus Permanen'),
+        ),
+      ],
+    ),
+  );
+
+  if (agree == true) {
+    ctrl.deleteTicket(ticketId);
   }
 }
 
