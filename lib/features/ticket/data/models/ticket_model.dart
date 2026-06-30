@@ -32,15 +32,32 @@ class TicketModel {
   });
 
   factory TicketModel.fromJson(Map<String, dynamic> json) {
-    // Penanganan fallback jika created_at atau updated_at null
     DateTime parseDate(dynamic date) {
       if (date == null) return DateTime.now();
-      return DateTime.parse(date.toString());
+      try {
+        return DateTime.parse(date.toString());
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
+    List<String> parseAttachments(dynamic val) {
+      if (val == null) return [];
+      if (val is List) return val.map((e) => e.toString()).toList();
+      if (val is String) {
+        if (val.startsWith('{') && val.endsWith('}')) {
+          final content = val.substring(1, val.length - 1);
+          if (content.isEmpty) return [];
+          return content.split(',').map((e) => e.trim().replaceAll('"', '')).toList();
+        }
+        return [val];
+      }
+      return [];
     }
 
     return TicketModel(
-      id: json['id'] ?? '',
-      title: json['title'] ?? '',
+      id: json['id']?.toString() ?? '',
+      title: json['title'] ?? 'Tanpa Judul',
       description: json['description'] ?? '',
       status: json['status'] ?? 'open',
       priority: json['priority'] ?? 'low',
@@ -49,10 +66,10 @@ class TicketModel {
       createdByName: json['created_by_name'] ?? 'User',
       assignedTo: json['assigned_to'],
       assignedToName: json['assigned_to_name'],
-      attachments: List<String>.from(json['attachments'] ?? []),
+      attachments: parseAttachments(json['attachments']),
       createdAt: parseDate(json['created_at']),
       updatedAt: parseDate(json['updated_at']),
-      commentCount: json['comment_count'] ?? 0,
+      commentCount: int.tryParse(json['comment_count']?.toString() ?? '0') ?? 0,
     );
   }
 
@@ -94,14 +111,14 @@ class CommentModel {
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json) => CommentModel(
-        id: json['id'] ?? '',
-        ticketId: json['ticket_id'] ?? '',
-        userId: json['user_id'] ?? '',
+        id: json['id']?.toString() ?? '',
+        ticketId: json['ticket_id']?.toString() ?? '',
+        userId: json['user_id']?.toString() ?? '',
         userName: json['user_name'] ?? 'User',
         userRole: json['user_role'] ?? 'user',
         content: json['content'] ?? '',
         createdAt: json['created_at'] != null 
-            ? DateTime.parse(json['created_at']) 
+            ? DateTime.parse(json['created_at'].toString())
             : DateTime.now(),
       );
 

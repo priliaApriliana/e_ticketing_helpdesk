@@ -44,12 +44,12 @@ class NotificationModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'recipientUserId': recipientUserId,
+      'recipient_user_id': recipientUserId,
       'title': title,
       'message': message,
-      'createdAt': createdAt.toIso8601String(),
-      'isRead': isRead,
-      'ticketId': ticketId,
+      'created_at': createdAt.toIso8601String(),
+      'is_read': isRead,
+      'ticket_id': ticketId,
       'type': type,
     };
   }
@@ -57,12 +57,12 @@ class NotificationModel {
   factory NotificationModel.fromJson(Map<String, dynamic> json) {
     return NotificationModel(
       id: json['id']?.toString() ?? '',
-      recipientUserId: json['recipientUserId']?.toString() ?? '',
+      recipientUserId: (json['recipient_user_id'] ?? json['recipientUserId'] ?? '').toString(),
       title: json['title']?.toString() ?? '',
       message: json['message']?.toString() ?? '',
-      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
-      isRead: json['isRead'] == true,
-      ticketId: json['ticketId']?.toString(),
+      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+      isRead: json['is_read'] == true || json['isRead'] == true,
+      ticketId: (json['ticket_id'] ?? json['ticketId'])?.toString(),
       type: json['type']?.toString(),
     );
   }

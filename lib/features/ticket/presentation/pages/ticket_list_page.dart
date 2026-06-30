@@ -18,8 +18,8 @@ class TicketListScreen extends StatelessWidget {
     return Obx(() {
       final user = authService.currentUser.value;
       
-      // HAK AKSES: Hanya User dan Admin yang boleh buat tiket
-      final bool canCreate = user?.role == 'user' || user?.role == 'admin';
+      // HAK AKSES: Semua role boleh buat tiket
+      const bool canCreate = true;
 
       final tickets = ctrl.tickets;
       final total = tickets.length;
@@ -57,7 +57,7 @@ class TicketListScreen extends StatelessWidget {
             ),
           ],
         ),
-        // Tombol hanya muncul jika diizinkan
+        // Tombol muncul untuk semua role
         floatingActionButton: canCreate 
           ? FloatingActionButton.extended(
               onPressed: () => Get.toNamed(Routes.ticketCreate),

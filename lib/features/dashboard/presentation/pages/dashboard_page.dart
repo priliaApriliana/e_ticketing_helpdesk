@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
 import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
 import 'package:e_ticketing_helpdesk/features/ticket/presentation/providers/ticket_provider.dart';
+import 'package:e_ticketing_helpdesk/features/profile/presentation/widgets/profile_widgets.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/dashboard_widgets.dart';
 
@@ -19,10 +20,10 @@ class DashboardScreen extends StatelessWidget {
     return Obx(() {
       final user = authService.currentUser.value;
       final userName = user?.name ?? 'Pengguna';
-      final roleName = formatRole(user?.role ?? '');
+      final roleName = ProfileUIHelpers.formatRole(user?.role ?? '');
       
-      // LOGIKA AKSES: Hanya User dan Admin yang boleh buat tiket
-      final bool canCreate = user?.isUser == true || user?.isAdmin == true;
+      // LOGIKA AKSES: Sekarang SEMUA ROLE bisa membuat tiket
+      const bool canCreate = true;
 
       final stats = dashCtrl.stats;
       final total = stats['total'] ?? 0;
@@ -52,7 +53,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   RoleMetricsPanel(
-                    isUser: user?.isUser == true,
+                    user: user, // Mengirim objek user lengkap untuk deteksi role yang akurat
                     metrics: roleMetrics,
                   ),
                   const SizedBox(height: 16),
@@ -67,7 +68,7 @@ class DashboardScreen extends StatelessWidget {
                   QuickActionsPanel(
                     canCreateTicket: canCreate, 
                     onTickets: () => Get.toNamed(Routes.ticketList),
-                    onCreateTicket: canCreate ? () => Get.toNamed(Routes.ticketCreate) : null,
+                    onCreateTicket: () => Get.toNamed(Routes.ticketCreate),
                     onProfile: () => Get.toNamed(Routes.profile),
                     onRefresh: () async {
                       final ticketProvider = context.read<TicketProvider>();
@@ -83,14 +84,12 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
         bottomNavigationBar: const DashboardBottomNav(),
-        // FAB hanya untuk User & Admin
-        floatingActionButton: canCreate 
-          ? FloatingActionButton.extended(
-              onPressed: () => Get.toNamed(Routes.ticketCreate),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Buat Tiket'),
-            )
-          : null, 
+        // FAB untuk SEMUA ROLE
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => Get.toNamed(Routes.ticketCreate),
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Buat Tiket'),
+        ),
       );
     });
   }

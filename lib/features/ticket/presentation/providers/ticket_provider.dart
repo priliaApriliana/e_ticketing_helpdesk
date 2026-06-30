@@ -31,7 +31,9 @@ class TicketProvider extends ChangeNotifier {
   final commentCtrl = TextEditingController();
   final selectedPriority = 'medium'.obs;
   final selectedCategory = 'Hardware'.obs;
-  final selectedImages = <XFile>[].obs;
+  
+  // Menggunakan List standar untuk reaktivitas yang lebih stabil dengan Provider (ChangeNotifier)
+  final List<XFile> selectedImages = [];
 
   final createFormKey = GlobalKey<FormState>();
 
@@ -162,55 +164,34 @@ class TicketProvider extends ChangeNotifier {
   }
 
   Future<void> pickImages(ImageSource source) async {
-    final picker = ImagePicker();
+    final ImagePicker picker = ImagePicker();
     try {
       if (source == ImageSource.camera) {
-        final XFile? pickedFile = await picker.pickImage(
-          source: source,
-          imageQuality: 80,
+        final XFile? file = await picker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 50,
+          maxWidth: 1024,
         );
-
-        if (pickedFile != null) {
-          final File file = File(pickedFile.path);
-          final int fileSize = await file.length();
-          
-          if (fileSize > 5 * 1024 * 1024) {
-            Get.snackbar(
-              'File Terlalu Besar',
-              'Ukuran gambar maksimal adalah 5MB. Gambar Anda: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)}MB',
-              backgroundColor: Colors.red,
-              colorText: Colors.white,
-            );
-            return;
-          }
-
-          selectedImages.add(pickedFile);
+        if (file != null) {
+          selectedImages.add(file);
           notifyListeners();
         }
       } else {
-        final List<XFile> pickedFiles = await picker.pickMultiImage(
-          imageQuality: 80,
+        // Coba pemilihan banyak gambar (Multi-Image)
+        final List<XFile> files = await picker.pickMultiImage(
+          imageQuality: 50,
+          maxWidth: 1024,
         );
-
-        if (pickedFiles.isNotEmpty) {
-          for (var file in pickedFiles) {
-            final int fileSize = await File(file.path).length();
-            if (fileSize <= 5 * 1024 * 1024) {
-              selectedImages.add(file);
-            } else {
-              Get.snackbar(
-                'File Terlalu Besar',
-                'Beberapa gambar dilewati karena ukuran melebihi 5MB.',
-                backgroundColor: Colors.orange,
-                colorText: Colors.white,
-              );
-            }
-          }
+        
+        // Hanya tambahkan jika user tidak membatalkan (files tidak kosong)
+        if (files.isNotEmpty) {
+          selectedImages.addAll(files);
           notifyListeners();
         }
       }
     } catch (e) {
-      Get.snackbar('Error', 'Gagal mengambil gambar: $e');
+      debugPrint('Error picking image: $e');
+      Get.snackbar('Error', 'Gagal mengakses media.');
     }
   }
 
@@ -245,7 +226,13 @@ class TicketProvider extends ChangeNotifier {
       _refreshDashboard();
       Get.snackbar('Berhasil', 'Tiket bantuan telah berhasil dibuat.');
     } catch (e) {
-      Get.snackbar('Error', 'Gagal membuat tiket: $e');
+      Get.snackbar(
+        'Gagal Mengirim', 
+        e.toString().replaceAll('Exception: ', ''),
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 5),
+      );
     } finally {
       isSubmitting.value = false;
       notifyListeners();

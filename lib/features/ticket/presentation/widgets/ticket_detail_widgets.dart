@@ -1088,7 +1088,7 @@ Future<void> showActionMenu(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (isAdmin || isHelpdesk)
+            if ((isAdmin || isHelpdesk) && ticket.status == 'open')
               ListTile(
                 leading: const Icon(Icons.timelapse_rounded, color: Colors.blue),
                 title: const Text('Set Diproses'),
@@ -1097,7 +1097,8 @@ Future<void> showActionMenu(
                   ctrl.updateStatus(ticketId, 'in_progress');
                 },
               ),
-            if (isAdmin || (isTechnicalSupport && isAssignedToMe))
+            if ((isAdmin || (isTechnicalSupport && isAssignedToMe)) && 
+                ticket.status == 'in_progress')
               ListTile(
                 leading: const Icon(Icons.verified_rounded, color: Colors.green),
                 title: const Text('Set Selesai Penanganan'),
@@ -1106,7 +1107,7 @@ Future<void> showActionMenu(
                   ctrl.updateStatus(ticketId, 'resolved');
                 },
               ),
-            if (isAdmin || isHelpdesk)
+            if ((isAdmin || isHelpdesk) && ticket.status != 'closed')
               ListTile(
                 leading: const Icon(Icons.lock_rounded, color: Colors.indigo),
                 title: const Text('Close Ticket (Selesai)'),
@@ -1116,7 +1117,7 @@ Future<void> showActionMenu(
                 },
               ),
             const Divider(),
-            if ((isAdmin || isHelpdesk) && ticket.assignedTo == null)
+            if ((isAdmin || isHelpdesk) && ticket.assignedTo == null && ticket.status == 'open')
               ListTile(
                 leading: const Icon(Icons.assignment_ind_outlined),
                 title: const Text('Assign ke Technical Support'),
@@ -1131,7 +1132,7 @@ Future<void> showActionMenu(
                   );
                 },
               ),
-            if (isAdmin && ticket.assignedTo != null)
+            if (isAdmin && ticket.assignedTo != null && ticket.status != 'closed')
               ListTile(
                 leading: const Icon(Icons.swap_horiz_rounded),
                 title: const Text('Re-assign Technical Support'),
@@ -1146,7 +1147,7 @@ Future<void> showActionMenu(
                   );
                 },
               ),
-            if (isAdmin && ticket.assignedTo != null)
+            if (isAdmin && ticket.assignedTo != null && ticket.status == 'open')
               ListTile(
                 leading: const Icon(Icons.person_off_outlined),
                 title: const Text('Batalkan Assign'),

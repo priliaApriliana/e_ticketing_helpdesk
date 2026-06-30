@@ -1,5 +1,4 @@
 const express = require('express');
-const bodyParser = require('body-parser');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -18,7 +17,9 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // Lebih stabil dibanding body-parser
+app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads')); // Agar gambar bisa diakses
 
 // Make io accessible to routes
 app.set('socketio', io);
@@ -26,7 +27,6 @@ app.set('socketio', io);
 // Socket.io connection
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
-
   socket.on('disconnect', () => {
     console.log('User disconnected');
   });
@@ -46,11 +46,16 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/users', userRoutes);
 
-// Root check
 app.get('/', (req, res) => {
-  res.send('E-Ticketing Helpdesk API with Real-time is running...');
+  res.send('API is running...');
 });
 
-server.listen(PORT, () => {
+// Error handling global agar server tidak mati (hang)
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Internal Server Error' });
+});
+
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });

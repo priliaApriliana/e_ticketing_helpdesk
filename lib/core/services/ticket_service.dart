@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
+import 'dart:async';
 
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_model.dart';
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_log_model.dart';
@@ -109,32 +110,65 @@ class TicketService extends GetxService {
     required String createdByName,
     List<String> attachments = const [],
   }) async {
-    // Menggunakan MultipartRequest untuk upload file fisik
-    var request = http.MultipartRequest('POST', Uri.parse(ApiConstants.tickets));
-    
-    request.headers.addAll({
-      'Authorization': 'Bearer ${_box.read('token')}',
-    });
+    try {
+      // 1. JIKA TIDAK ADA GAMBAR: Gunakan POST JSON biasa
+      // Backend (server.js) hanya menggunakan bodyParser.json(), jadi Multipart tanpa file sering gagal terbaca
+      if (attachments.isEmpty) {
+        final response = await http.post(
+          Uri.parse(ApiConstants.tickets),
+          headers: _headers,
+          body: jsonEncode({
+            'title': title,
+            'description': description,
+            'priority': priority,
+            'category': category,
+            'created_by': createdBy,
+            'created_by_name': createdByName,
+          }),
+        ).timeout(const Duration(seconds: 15));
 
-    request.fields['title'] = title;
-    request.fields['description'] = description;
-    request.fields['priority'] = priority;
-    request.fields['category'] = category;
-    request.fields['created_by'] = createdBy;
-
-    for (var path in attachments) {
-      if (path.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath('attachments', path));
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          return TicketModel.fromJson(jsonDecode(response.body));
+        } else {
+          final errorData = jsonDecode(response.body);
+          throw Exception(errorData['message'] ?? 'Gagal membuat tiket (JSON)');
+        }
       }
-    }
 
-    var streamedResponse = await request.send();
-    var response = await http.Response.fromStream(streamedResponse);
+      // 2. JIKA ADA GAMBAR: Gunakan MultipartRequest
+      // Catatan: Pastikan Backend sudah menginstal 'multer' untuk menangani ini
+      var request = http.MultipartRequest('POST', Uri.parse(ApiConstants.tickets));
+      request.headers.addAll({'Authorization': 'Bearer ${_box.read('token')}'});
+      
+      request.fields.addAll({
+        'title': title,
+        'description': description,
+        'priority': priority,
+        'category': category,
+        'created_by': createdBy,
+        'created_by_name': createdByName,
+      });
 
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      return TicketModel.fromJson(jsonDecode(response.body));
-    } else {
-      throw Exception('Gagal membuat tiket: ${response.body}');
+      for (var path in attachments) {
+        if (path.isNotEmpty) {
+          request.files.add(await http.MultipartFile.fromPath('attachments', path));
+        }
+      }
+
+      var streamedResponse = await request.send().timeout(const Duration(seconds: 30));
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return TicketModel.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception('Gagal membuat tiket (Multipart): ${response.statusCode}');
+      }
+    } on TimeoutException {
+      throw Exception('Koneksi timeout. Pastikan server aktif dan port 3000 terbuka.');
+    } on SocketException {
+      throw Exception('Server tidak terjangkau. Periksa alamat IP laptop/emulator Anda.');
+    } catch (e) {
+      throw Exception('Terjadi kesalahan: $e');
     }
   }
 

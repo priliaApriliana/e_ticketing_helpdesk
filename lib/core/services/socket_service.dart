@@ -5,39 +5,37 @@ import 'package:e_ticketing_helpdesk/core/constants/api_constants.dart';
 class SocketService extends GetxService {
   IO.Socket? _socket;
 
-  // Getter untuk mengecek apakah socket sudah siap
-  bool get isInitialized => _socket != null;
+  bool get isConnected => _socket != null && _socket!.connected;
 
   void connect() {
     try {
-      // Get the base URL from ApiConstants, removing /api if necessary
       String baseUrl = ApiConstants.baseUrl.replaceAll('/api', '');
       
+      print('>>> Menghubungkan ke Socket Server: $baseUrl');
+      
       _socket = IO.io(baseUrl, <String, dynamic>{
-        'transports': ['websocket'],
+        'transports': ['websocket', 'polling'],
         'autoConnect': true,
+        'reconnection': true,
+        'reconnectionDelay': 2000,
+        'reconnectionAttempts': 10,
       });
 
-      _socket!.onConnect((_) {
-        print('Connected to socket server');
-      });
-
-      _socket!.onDisconnect((_) {
-        print('Disconnected from socket server');
-      });
-
-      _socket!.onConnectError((err) => print('Connect Error: $err'));
-      _socket!.onError((err) => print('Error: $err'));
+      _socket!.onConnect((_) => print('>>> Socket Terhubung Berhasil'));
+      _socket!.onDisconnect((_) => print('>>> Socket Terputus'));
+      _socket!.onConnectError((err) => print('>>> Socket Connect Error: $err'));
+      _socket!.onError((err) => print('>>> Socket Error: $err'));
     } catch (e) {
-      print('Socket connection error: $e');
+      print('>>> Socket Exception: $e');
     }
   }
 
   void on(String event, Function(dynamic) handler) {
     if (_socket != null) {
-      _socket!.on(event, handler);
-    } else {
-      print('Warning: Attempted to listen to event "$event" before socket was initialized.');
+      _socket!.on(event, (data) {
+        print('>>> Event Socket Diterima: $event');
+        handler(data);
+      });
     }
   }
 

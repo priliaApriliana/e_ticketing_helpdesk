@@ -4,10 +4,11 @@ const db = require('../db');
 
 // Get notifications for current user
 router.get('/', async (req, res) => {
-  const { user_id } = req.query; // Usually extracted from JWT in a real app
+  const { user_id } = req.query;
   try {
+    // Gunakan casting ::text untuk keamanan perbandingan tipe data
     const result = await db.query(
-      'SELECT * FROM notifications WHERE recipient_user_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM notifications WHERE recipient_user_id::text = $1::text ORDER BY created_at DESC',
       [user_id]
     );
     res.json(result.rows);
@@ -44,7 +45,7 @@ router.put('/:id/read', async (req, res) => {
 router.put('/read-all', async (req, res) => {
   const { user_id } = req.body;
   try {
-    await db.query('UPDATE notifications SET is_read = TRUE WHERE recipient_user_id = $1', [user_id]);
+    await db.query('UPDATE notifications SET is_read = TRUE WHERE recipient_user_id::text = $1::text', [user_id]);
     res.json({ message: 'Semua notifikasi ditandai sudah dibaca' });
   } catch (err) {
     res.status(500).json({ message: err.message });
