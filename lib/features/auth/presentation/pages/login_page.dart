@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
 import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
-import 'package:e_ticketing_helpdesk/features/auth/presentation/widgets/password_action_dialog.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/auth_widget.dart';
 
@@ -184,41 +183,7 @@ class LoginScreen extends StatelessWidget {
                                       Align(
                                         alignment: Alignment.centerRight,
                                         child: TextButton(
-                                          onPressed: () =>
-                                              showPasswordActionDialog(
-                                                title: 'Lupa Password',
-                                                description:
-                                                    'Masukkan email akun Anda dan password baru untuk mereset akses.',
-                                                submitLabel: 'Reset Password',
-                                                showEmailField: true,
-                                                requireCurrentPassword: false,
-                                                onSubmit: (email, _, newPassword) async {
-                                                  final result = await context
-                                                      .read<AuthProvider>()
-                                                      .resetPassword(
-                                                        email!,
-                                                        newPassword,
-                                                      );
-                                                  
-                                                  if (result['success']) {
-                                                    Get.snackbar(
-                                                      'Berhasil',
-                                                      'Password Anda telah diperbarui. Silakan login kembali.',
-                                                      backgroundColor: Colors.green,
-                                                      colorText: Colors.white,
-                                                      snackPosition: SnackPosition.BOTTOM,
-                                                    );
-                                                  } else {
-                                                    Get.snackbar(
-                                                      'Gagal',
-                                                      result['message'] ?? 'Gagal mereset password',
-                                                      backgroundColor: Colors.red,
-                                                      colorText: Colors.white,
-                                                      snackPosition: SnackPosition.BOTTOM,
-                                                    );
-                                                  }
-                                                },
-                                              ),
+                                          onPressed: () => Get.toNamed(Routes.forgotPassword),
                                           child: const Text('Lupa Password?'),
                                         ),
                                       ),

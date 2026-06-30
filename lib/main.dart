@@ -16,7 +16,7 @@ import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/dashboard/presentation/providers/dashboard_provider.dart';
 import 'features/notification/presentation/providers/notification_provider.dart';
 import 'features/profile/presentation/providers/profile_provider.dart';
-import 'features/profile/presentation/providers/user_management_provider.dart'; // Tambahkan ini
+import 'features/profile/presentation/providers/user_management_provider.dart';
 import 'features/ticket/presentation/providers/ticket_provider.dart';
 
 void main() async {
@@ -30,7 +30,7 @@ void main() async {
   final ticketService = TicketService();
   final notificationService = NotificationService();
   final socketService = SocketService();
-  final themeController = Get.put(ThemeController(), permanent: true);
+  Get.put(ThemeController(), permanent: true);
 
   // 2. Daftarkan Service ke GetX
   Get.put<AuthService>(authService, permanent: true);
@@ -47,20 +47,20 @@ void main() async {
   final ticketProvider = TicketProvider();
   final profileProvider = ProfileProvider();
   final notificationProvider = NotificationProvider();
-  final userManagementProvider = UserManagementProvider(); // Tambahkan ini
+  final userManagementProvider = UserManagementProvider();
 
   Get.put<AuthProvider>(authProvider, permanent: true);
   Get.put<DashboardProvider>(dashboardProvider, permanent: true);
   Get.put<TicketProvider>(ticketProvider, permanent: true);
   Get.put<ProfileProvider>(profileProvider, permanent: true);
   Get.put<NotificationProvider>(notificationProvider, permanent: true);
-  Get.put<UserManagementProvider>(userManagementProvider, permanent: true); // Tambahkan ini
+  Get.put<UserManagementProvider>(userManagementProvider, permanent: true);
 
   // 5. Jalankan fungsi onInit
   dashboardProvider.onInit();
   ticketProvider.onInit();
   notificationProvider.onInit();
-  userManagementProvider.onInit(); // Tambahkan ini
+  userManagementProvider.onInit();
 
   runApp(
     MultiProvider(
@@ -74,7 +74,7 @@ void main() async {
         ChangeNotifierProvider.value(value: ticketProvider),
         ChangeNotifierProvider.value(value: profileProvider),
         ChangeNotifierProvider.value(value: notificationProvider),
-        ChangeNotifierProvider.value(value: userManagementProvider), // Tambahkan ini
+        ChangeNotifierProvider.value(value: userManagementProvider),
       ],
       child: const MyApp(),
     ),

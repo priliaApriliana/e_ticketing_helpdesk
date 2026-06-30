@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_model.dart';
+import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_log_model.dart';
 import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
-import 'package:e_ticketing_helpdesk/core/services/notification_service.dart';
 import 'package:e_ticketing_helpdesk/core/services/socket_service.dart';
 import 'package:e_ticketing_helpdesk/features/ticket/data/repositories/ticket_repository.dart';
 import 'package:e_ticketing_helpdesk/features/dashboard/presentation/providers/dashboard_provider.dart';
@@ -12,15 +13,16 @@ import 'package:e_ticketing_helpdesk/features/dashboard/presentation/providers/d
 class TicketProvider extends ChangeNotifier {
   final TicketRepository _ticketRepository = TicketRepository();
   final _authService = Get.find<AuthService>();
-  final _notificationService = Get.find<NotificationService>();
   final _socketService = Get.find<SocketService>();
 
   final tickets = <TicketModel>[].obs;
   final comments = <CommentModel>[].obs;
+  final ticketLogs = <TicketLogModel>[].obs;
   final selectedTicket = Rx<TicketModel?>(null);
 
   final isLoading = false.obs;
   final isLoadingComments = false.obs;
+  final isLoadingLogs = false.obs;
   final isSubmitting = false.obs;
   final selectedFilter = 'all'.obs;
 
@@ -46,8 +48,6 @@ class TicketProvider extends ChangeNotifier {
       final user = _authService.currentUser.value;
       if (user == null) return;
       
-      // Refresh jika Admin/Helpdesk (karena mereka harus tahu tiket masuk baru)
-      // atau jika itu tiket buatan User sendiri.
       if (user.isAdmin || user.isHelpdesk || (user.isUser && data['created_by'] == user.id)) {
         loadTickets();
       }
@@ -58,6 +58,23 @@ class TicketProvider extends ChangeNotifier {
         loadTicketDetail(data['id']);
       }
       loadTickets();
+    });
+
+    _socketService.on('ticket_status_updated', (data) {
+      final ticketId = data['ticket_id'];
+      if (selectedTicket.value?.id == ticketId) {
+        loadTicketDetail(ticketId);
+        
+        Get.snackbar(
+          'Status Tiket Diperbarui',
+          'Tiket #${ticketId.toString().substring(0, 5)} kini berstatus: ${data['new_status']}',
+          backgroundColor: Colors.indigo,
+          colorText: Colors.white,
+          snackPosition: SnackPosition.TOP,
+        );
+      }
+      loadTickets();
+      _refreshDashboard();
     });
 
     _socketService.on('comment_added', (data) {
@@ -107,11 +124,10 @@ class TicketProvider extends ChangeNotifier {
 
       if (user != null) {
         if (user.isUser) {
-          createdBy = user.id; // Filter: Hanya buatan sendiri
+          createdBy = user.id;
         } else if (user.isTechnicalSupport && !user.isAdmin) {
-          assignedTo = user.id; // Filter: Hanya yang ditugaskan ke saya
+          assignedTo = user.id;
         }
-        // Admin & Helpdesk: Filter tetap null agar menarik semua data
       }
 
       final status = selectedFilter.value == 'all' ? null : selectedFilter.value;
@@ -131,36 +147,78 @@ class TicketProvider extends ChangeNotifier {
     isLoading.value = true;
     notifyListeners();
     isLoadingComments.value = true;
+    isLoadingLogs.value = true;
     notifyListeners();
     try {
       selectedTicket.value = await _ticketRepository.getTicketById(id);
       comments.value = await _ticketRepository.getComments(id);
+      ticketLogs.value = await _ticketRepository.getTicketLogs(id);
     } finally {
       isLoading.value = false;
       isLoadingComments.value = false;
+      isLoadingLogs.value = false;
       notifyListeners();
     }
   }
 
   Future<void> pickImages(ImageSource source) async {
     final picker = ImagePicker();
-    if (source == ImageSource.gallery) {
-      final images = await picker.pickMultiImage();
-      if (images.isNotEmpty) {
-        selectedImages.addAll(images);
+    try {
+      if (source == ImageSource.camera) {
+        final XFile? pickedFile = await picker.pickImage(
+          source: source,
+          imageQuality: 80,
+        );
+
+        if (pickedFile != null) {
+          final File file = File(pickedFile.path);
+          final int fileSize = await file.length();
+          
+          if (fileSize > 5 * 1024 * 1024) {
+            Get.snackbar(
+              'File Terlalu Besar',
+              'Ukuran gambar maksimal adalah 5MB. Gambar Anda: ${(fileSize / (1024 * 1024)).toStringAsFixed(2)}MB',
+              backgroundColor: Colors.red,
+              colorText: Colors.white,
+            );
+            return;
+          }
+
+          selectedImages.add(pickedFile);
+          notifyListeners();
+        }
+      } else {
+        final List<XFile> pickedFiles = await picker.pickMultiImage(
+          imageQuality: 80,
+        );
+
+        if (pickedFiles.isNotEmpty) {
+          for (var file in pickedFiles) {
+            final int fileSize = await File(file.path).length();
+            if (fileSize <= 5 * 1024 * 1024) {
+              selectedImages.add(file);
+            } else {
+              Get.snackbar(
+                'File Terlalu Besar',
+                'Beberapa gambar dilewati karena ukuran melebihi 5MB.',
+                backgroundColor: Colors.orange,
+                colorText: Colors.white,
+              );
+            }
+          }
+          notifyListeners();
+        }
       }
-    } else {
-      final image = await picker.pickImage(source: source);
-      if (image != null) {
-        selectedImages.add(image);
-      }
+    } catch (e) {
+      Get.snackbar('Error', 'Gagal mengambil gambar: $e');
     }
-    notifyListeners();
   }
 
   void removeImage(int index) {
-    selectedImages.removeAt(index);
-    notifyListeners();
+    if (index >= 0 && index < selectedImages.length) {
+      selectedImages.removeAt(index);
+      notifyListeners();
+    }
   }
 
   Future<void> createTicket() async {
@@ -205,6 +263,8 @@ class TicketProvider extends ChangeNotifier {
         ticketId: ticketId,
         assignedTo: assignedTo,
         assignedToName: assignedToName,
+        changedBy: actor.id,
+        changedByName: actor.name,
       );
       
       if (success) {
@@ -236,7 +296,7 @@ class TicketProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> updateStatus(String ticketId, String status) async {
+  Future<void> updateStatus(String ticketId, String status, {String? note}) async {
     final actor = _authService.currentUser.value;
     if (actor == null) return;
 
@@ -245,11 +305,27 @@ class TicketProvider extends ChangeNotifier {
       return;
     }
 
-    await _ticketRepository.updateTicketStatus(ticketId, status);
-    await loadTicketDetail(ticketId);
-    loadTickets();
-    _refreshDashboard();
-    Get.snackbar('Berhasil', 'Status tiket diperbarui.');
+    isSubmitting.value = true;
+    notifyListeners();
+    try {
+      final success = await _ticketRepository.updateTicketStatus(
+        ticketId: ticketId,
+        status: status,
+        changedBy: actor.id,
+        changedByName: actor.name,
+        note: note,
+      );
+
+      if (success) {
+        await loadTicketDetail(ticketId);
+        loadTickets();
+        _refreshDashboard();
+        Get.snackbar('Berhasil', 'Status tiket diperbarui.');
+      }
+    } finally {
+      isSubmitting.value = false;
+      notifyListeners();
+    }
   }
 
   void prepareReply(String username) {

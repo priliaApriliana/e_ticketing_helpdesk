@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_model.dart';
+import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_log_model.dart';
 import 'package:e_ticketing_helpdesk/core/services/ticket_service.dart';
 
 class TicketRepository {
@@ -26,6 +27,10 @@ class TicketRepository {
 
   Future<List<CommentModel>> getComments(String ticketId) {
     return _ticketService.getComments(ticketId);
+  }
+
+  Future<List<TicketLogModel>> getTicketLogs(String ticketId) {
+    return _ticketService.getTicketLogs(ticketId);
   }
 
   Future<TicketModel> createTicket({
@@ -68,11 +73,15 @@ class TicketRepository {
     required String ticketId,
     required String assignedTo,
     required String assignedToName,
+    required String changedBy,
+    required String changedByName,
   }) {
     return _ticketService.assignTicket(
       ticketId: ticketId,
       assignedTo: assignedTo,
       assignedToName: assignedToName,
+      changedBy: changedBy,
+      changedByName: changedByName,
     );
   }
 
@@ -80,7 +89,19 @@ class TicketRepository {
     return _ticketService.unassignTicket(ticketId);
   }
 
-  Future<bool> updateTicketStatus(String ticketId, String status) {
-    return _ticketService.updateTicketStatus(ticketId, status);
+  Future<bool> updateTicketStatus({
+    required String ticketId,
+    required String status,
+    required String changedBy,
+    required String changedByName,
+    String? note,
+  }) {
+    return _ticketService.updateTicketStatus(
+      ticketId: ticketId,
+      status: status,
+      changedBy: changedBy,
+      changedByName: changedByName,
+      note: note,
+    );
   }
 }

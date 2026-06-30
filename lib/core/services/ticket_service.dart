@@ -4,6 +4,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_model.dart';
+import 'package:e_ticketing_helpdesk/features/ticket/data/models/ticket_log_model.dart';
 import 'package:e_ticketing_helpdesk/core/constants/api_constants.dart';
 
 class TicketService extends GetxService {
@@ -78,6 +79,26 @@ class TicketService extends GetxService {
     return [];
   }
 
+  Future<List<TicketLogModel>> getTicketLogs(String ticketId) async {
+    try {
+      final response = await http.get(
+        Uri.parse(ApiConstants.ticketLogs(ticketId)),
+        headers: _headers,
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> body = jsonDecode(response.body);
+        if (body['success'] == true) {
+          List data = body['data'];
+          return data.map((item) => TicketLogModel.fromJson(item)).toList();
+        }
+      }
+    } catch (e) {
+      print('Error getting ticket logs: $e');
+    }
+    return [];
+  }
+
   Future<TicketModel> createTicket({
     required String title,
     required String description,
@@ -134,12 +155,17 @@ class TicketService extends GetxService {
     required String ticketId,
     required String assignedTo,
     required String assignedToName,
+    required String changedBy,
+    required String changedByName,
   }) async {
     return updateTicketStatus(
-      ticketId, 
-      'in_progress', 
+      ticketId: ticketId, 
+      status: 'in_progress', 
       assignedTo: assignedTo, 
-      assignedToName: assignedToName
+      assignedToName: assignedToName,
+      changedBy: changedBy,
+      changedByName: changedByName,
+      note: 'Ticket assigned to $assignedToName',
     );
   }
 
@@ -155,11 +181,14 @@ class TicketService extends GetxService {
     }
   }
 
-  Future<bool> updateTicketStatus(
-    String ticketId,
-    String status, {
+  Future<bool> updateTicketStatus({
+    required String ticketId,
+    required String status,
     String? assignedTo,
     String? assignedToName,
+    String? changedBy,
+    String? changedByName,
+    String? note,
   }) async {
     try {
       final response = await http.put(
@@ -169,6 +198,9 @@ class TicketService extends GetxService {
           'status': status,
           'assigned_to': assignedTo,
           'assigned_to_name': assignedToName,
+          'changed_by': changedBy,
+          'changed_by_name': changedByName,
+          'note': note,
         }),
       );
 

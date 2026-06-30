@@ -633,6 +633,121 @@ class TimelineStep extends StatelessWidget {
   }
 }
 
+class HistoryLogPanel extends StatelessWidget {
+  final TicketProvider controller;
+
+  const HistoryLogPanel({super.key, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: panelColor(context),
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: panelBorderColor(context)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Riwayat Perubahan Status',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: titleColor(context),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Obx(() {
+            if (controller.isLoadingLogs.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (controller.ticketLogs.isEmpty) {
+              return const Text(
+                "Belum ada riwayat perubahan.",
+                style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+              );
+            }
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: controller.ticketLogs.length,
+              separatorBuilder: (context, index) => const Divider(height: 24),
+              itemBuilder: (context, index) {
+                final log = controller.ticketLogs[index];
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      margin: const EdgeInsets.only(top: 4),
+                      decoration: BoxDecoration(
+                        color: AppTheme.statusColor(log.newStatus),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "${cap(log.oldStatus)} ➔ ${cap(log.newStatus)}",
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            "Oleh: ${log.changedByName}",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (log.note != null && log.note!.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              log.note!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF334155),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 4),
+                          Text(
+                            DateFormat('dd MMM yyyy, HH:mm').format(log.createdAt),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
 class CommentsPanel extends StatelessWidget {
   final TicketProvider controller;
   final AuthService authService;

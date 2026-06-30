@@ -1,4 +1,5 @@
 -- Hapus tabel jika sudah ada (Opsional, gunakan dengan hati-hati)
+-- DROP TABLE IF EXISTS ticket_logs;
 -- DROP TABLE IF EXISTS comments;
 -- DROP TABLE IF EXISTS notifications;
 -- DROP TABLE IF EXISTS tickets;
@@ -28,6 +29,18 @@ CREATE TABLE tickets (
     created_by UUID REFERENCES users(id),
     assigned_to UUID REFERENCES users(id),
     attachments TEXT[] DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabel Ticket Logs (FITUR BARU)
+CREATE TABLE ticket_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    ticket_id UUID REFERENCES tickets(id) ON DELETE CASCADE,
+    changed_by UUID REFERENCES users(id),
+    changed_by_name VARCHAR(100),
+    old_status VARCHAR(20),
+    new_status VARCHAR(20),
+    note TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

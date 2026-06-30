@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:provider/provider.dart'; // Impor yang hilang
+import 'package:provider/provider.dart';
 
+import 'package:e_ticketing_helpdesk/core/routes/app_routes.dart';
 import 'package:e_ticketing_helpdesk/core/services/auth_service.dart';
 import 'package:e_ticketing_helpdesk/core/theme/app_theme.dart';
 import '../providers/ticket_provider.dart';
@@ -12,7 +13,6 @@ class TicketDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sekarang .read() bisa digunakan karena package provider sudah diimpor
     final ctrl = context.read<TicketProvider>();
     final authService = context.read<AuthService>();
     final String ticketId = Get.arguments as String;
@@ -92,6 +92,26 @@ class TicketDetailScreen extends StatelessWidget {
                           DescriptionPanel(description: ticket.description),
                           const SizedBox(height: 16),
                           TimelinePanel(ticket: ticket),
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                onPressed: () => Get.toNamed(
+                                  Routes.ticketTracking,
+                                  arguments: ticket.id,
+                                ),
+                                icon: const Icon(Icons.analytics_outlined, size: 18),
+                                label: const Text('Lihat Tracking Lengkap (Stepper)'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          HistoryLogPanel(controller: ctrl),
                           const SizedBox(height: 16),
                           CommentsPanel(
                             controller: ctrl,

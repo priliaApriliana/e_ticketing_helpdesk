@@ -9,6 +9,7 @@ class ApiConstants {
   // Tickets
   static const String tickets = '$baseUrl/tickets';
   static String ticketDetail(String id) => '$baseUrl/tickets/$id';
+  static String ticketLogs(String id) => '$baseUrl/tickets/$id/logs';
   static String ticketsByUser(String userId) => '$baseUrl/tickets?userId=$userId';
   static String ticketsByStatus(String status) => '$baseUrl/tickets?status=$status';
   static String ticketUpdateStatus(String id) => '$baseUrl/tickets/$id/status';
